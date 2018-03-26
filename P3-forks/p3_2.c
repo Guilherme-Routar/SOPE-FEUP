@@ -3,9 +3,10 @@
 
 int main(void)
 {
-    // P2
 
+    // ### ex2 ### 
     // a
+    
     write(STDOUT_FILENO, "1", 1);
     if (fork() > 0)
     {
@@ -18,8 +19,7 @@ int main(void)
         write(STDOUT_FILENO, "5", 1);
     }
     write(STDOUT_FILENO, "\n", 1);
-    return 0;
-
+    
     // b
     /*
     printf("1");
@@ -49,5 +49,4 @@ int main(void)
         In a), "1" is immediatly printed. In b), "1" is saved to both processes' buffer
         and is only printed in the end of the execution that's why it appears twice
     */
-
 }
