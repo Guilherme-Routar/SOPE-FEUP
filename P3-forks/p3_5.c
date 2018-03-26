@@ -8,13 +8,18 @@ int status;
 int main(void)
 {
 
-    if (fork() > 0) {
-        wait(NULL); //waits for any child process to finish
-        //wait(&status); //waits for child termination w/ info about how it terminated
-        printf("world!");
+    if (fork() > 0) { //grandpa
+        wait(&status);
+        printf("friends!");
     }
     else {
-        printf("Hello, ");
+        if (fork() > 0 ) { //father
+            wait(&status);
+            printf("my ");
+        }
+        else { //son
+            printf("Hello ");
+        }
     }
 
     return 0;
