@@ -44,7 +44,7 @@ int main(void)
         }
         else if (pid2 == 0) { // C does whatever A wanted B to do
             printf("I'm process %d. My parent is %d. I'm going to work for 1 second ...\n", getpid(), getppid());
-            sleep(1); // simulando o trabalho do filho
+            sleep(3); // simulando o trabalho do filho
             printf("I'm process %d. My parent is %d. I finished my work\n", getpid(), getppid());
             exit(0); // a eliminar na alinea c)
         }
