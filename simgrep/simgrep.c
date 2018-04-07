@@ -1,25 +1,27 @@
 #include <stdio.h>
-#include <errno.h>
-#include <signal.h>
+#include <signal.h> //signals
 #include <string.h>
+#include <stdlib.h> //venv
 
 /**
 * CTRL+C should output an exit prompt. Continue if N, exit if Y 
 **/
-void sigint_handler(int signo) 
+void sigint_handler(int signo)
 {
     printf("Are you sure you want to quit? (Y/N): ");
     char str[1];
     scanf("%s", str);
     str[0] = toupper(str[0]);
-    if (strcmp(str, "Y") == 0) {
+    if (strcmp(str, "Y") == 0)
+    {
         printf("Quitting\n");
         exit(0);
     }
-    if (strcmp(str, "N") == 0) printf("Continuing\n");
+    if (strcmp(str, "N") == 0)
+        printf("Continuing\n");
 }
 
-void check_CTRL_C() 
+void check_CTRL_C()
 {
     struct sigaction sa;
     sa.sa_handler = sigint_handler;
@@ -33,7 +35,8 @@ int main(int argc, char *argv[])
     check_CTRL_C();
 
     // User must insert at least a pattern and a file (or directory)
-    if (argc < 3) {
+    if (argc < 3)
+    {
         perror("Insuficient Arguments\n");
         return 0;
     }
@@ -54,10 +57,15 @@ int main(int argc, char *argv[])
      * -r : search the pattern in every file below the indicated directory
     **/
 
-   sleep(10);
+    FILE *fp;
+    fp = fopen(getenv("LOGFILENAME"), "a+");
+    if (fp == NULL)
+        perror("Error opening or creating log file");
+    fclose(fp);
 
-printf("After sleep");
+    sleep(5);
 
-sleep(3);
-    
+    printf("After sleep");
+
+    sleep(3);
 }
