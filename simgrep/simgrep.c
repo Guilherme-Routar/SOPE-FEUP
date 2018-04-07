@@ -2,6 +2,9 @@
 #include <signal.h> //signals
 #include <string.h>
 #include <stdlib.h> //venv
+#include <dirent.h> //getDirContent
+
+#define CURRENT ".";
 
 /**
 * CTRL+C should output an exit prompt. Continue if N, exit if Y 
@@ -29,6 +32,33 @@ void check_CTRL_C()
     sigaction(SIGINT, &sa, NULL);
 }
 
+/**
+ * Stack Overflow:
+ * https://stackoverflow.com/questions/4204666/how-to-list-files-in-a-directory-in-a-c-program
+**/
+char * getDirContent(char *directory)
+{
+    char * content[100];
+
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(directory);
+    if (d)
+    {
+        int index = 0;
+        while ((dir = readdir(d)) != NULL)
+        {
+            char name[255];
+            strncpy(name, dir->d_name, 100);
+            content[index] = name;
+            printf("\nstring = %s", content[index]);
+            index++;
+        }
+        closedir(d);
+    }
+    return content;
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -44,8 +74,8 @@ int main(int argc, char *argv[])
     /**
      * Read from STDIN in case there is no cmd line argument for the file or directory
     **/
-    if (!feof(stdin))
-        printf("stdin is empty\n");
+    //if (!feof(stdin))
+    //printf("stdin is empty\n");
 
     /**
      * [OPTIONS]
@@ -57,15 +87,12 @@ int main(int argc, char *argv[])
      * -r : search the pattern in every file below the indicated directory
     **/
 
-    FILE *fp;
-    fp = fopen(getenv("LOGFILENAME"), "a+");
-    if (fp == NULL)
-        perror("Error opening or creating log file");
-    fclose(fp);
+    getDirContent("testgrep");
 
-    sleep(5);
+    //char * dir[] = {"string1", "string2"};
+    //printf("%s", dir[0]);
 
-    printf("After sleep");
-
+    //printf("leaving simgrep");
     sleep(3);
+    return 0;
 }
