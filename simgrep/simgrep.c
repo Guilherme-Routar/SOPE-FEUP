@@ -29,13 +29,11 @@ void check_CTRL_C()
     struct sigaction sa;
     sa.sa_handler = sigint_handler;
     sa.sa_flags = 0;
-    sigaction(SIGINT, &sa, NULL);
+    if (sigaction(SIGINT, &sa, NULL) < 0) {
+        fprintf(stderr, "Unable to install SIGINT handler\n");
+    }
 }
 
-/**
- * Stack Overflow:
- * https://stackoverflow.com/questions/4204666/how-to-list-files-in-a-directory-in-a-c-program
-**/
 char * getDirContent(char *directory)
 {
     char * content[100];
@@ -67,7 +65,7 @@ int main(int argc, char *argv[])
     // User must insert at least a pattern and a file (or directory)
     if (argc < 3)
     {
-        perror("Insuficient Arguments\n");
+        fprintf(stderr, "Insuficient arguments\n");
         return 0;
     }
 
