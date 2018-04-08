@@ -3,8 +3,12 @@
 #include <string.h>
 #include <stdlib.h> //venv
 #include <dirent.h> //getDirContent
+#include <malloc.h>
 
 #define CURRENT ".";
+
+#define MAX_INSTANCES_PER_FOLDER 100
+#define MAX_INSTANCE_NAME 80
 
 /**
 * CTRL+C should output an exit prompt. Continue if N, exit if Y 
@@ -29,14 +33,30 @@ void check_CTRL_C()
     struct sigaction sa;
     sa.sa_handler = sigint_handler;
     sa.sa_flags = 0;
-    if (sigaction(SIGINT, &sa, NULL) < 0) {
+    if (sigaction(SIGINT, &sa, NULL) < 0)
         fprintf(stderr, "Unable to install SIGINT handler\n");
-    }
 }
 
-char * getDirContent(char *directory)
+char **initFolderArray() 
 {
-    char * content[100];
+    int i = 0;
+    char **folderContent = malloc(sizeof(char *) * MAX_INSTANCES_PER_FOLDER);
+    if (!folderContent) return NULL;
+    for (i = 0; i < MAX_INSTANCES_PER_FOLDER; i++)
+    {
+        folderContent[i] = malloc(MAX_INSTANCE_NAME + 1);
+        if (!folderContent[i])
+        {
+            free(folderContent);
+            return NULL;
+        }
+    }
+    return folderContent;
+}
+
+char **getFolderContent(char *directory)
+{
+    char **folderContent = initFolderArray();
 
     DIR *d;
     struct dirent *dir;
@@ -46,15 +66,21 @@ char * getDirContent(char *directory)
         int index = 0;
         while ((dir = readdir(d)) != NULL)
         {
-            char name[255];
-            strncpy(name, dir->d_name, 100);
-            content[index] = name;
-            printf("\nstring = %s", content[index]);
+            strncpy(folderContent[index], (char *) dir->d_name, MAX_INSTANCE_NAME);
             index++;
         }
         closedir(d);
     }
-    return content;
+    return folderContent;
+}
+
+/**
+* Read from STDIN in case there is no cmd line argument for the file or directory
+**/
+void checkSTDIN() 
+{
+    if (!feof(stdin))
+        fprintf(stderr, "stdin is empty\n");
 }
 
 int main(int argc, char *argv[])
@@ -62,18 +88,14 @@ int main(int argc, char *argv[])
 
     check_CTRL_C();
 
+    checkSTDIN();
+
     // User must insert at least a pattern and a file (or directory)
     if (argc < 3)
     {
         fprintf(stderr, "Insuficient arguments\n");
         return 0;
     }
-
-    /**
-     * Read from STDIN in case there is no cmd line argument for the file or directory
-    **/
-    //if (!feof(stdin))
-    //printf("stdin is empty\n");
 
     /**
      * [OPTIONS]
@@ -85,10 +107,9 @@ int main(int argc, char *argv[])
      * -r : search the pattern in every file below the indicated directory
     **/
 
-    getDirContent("testgrep");
+    char **content = getFolderContent("testgrep");
 
-    //char * dir[] = {"string1", "string2"};
-    //printf("%s", dir[0]);
+    printf("%s", content[0]);
 
     //printf("leaving simgrep");
     sleep(3);
