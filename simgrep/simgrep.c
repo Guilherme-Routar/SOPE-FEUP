@@ -160,21 +160,21 @@ void searchWholePattern(char *pathToFile, char *pattern)
 
     FILE *fp;
     fp = fopen(pathToFile, "r");
-    char line[LINE_MAX_LENGTH];
+    char *line = (char *)malloc(LINE_MAX_LENGTH);
     int linecounter = 0;
     if (IGNORE_CASE)
         printf("Ignoring case (-i)");
     while (fgets(line, LINE_MAX_LENGTH, fp))
     {
+        if (IGNORE_CASE)
+        {
+            line = lowercase(line);
+            pattern = lowercase(pattern);
+        }
         const char *p = line;
         for (;;)
         {
-            if (IGNORE_CASE)
-            {
-                p = lowercase(line);
-                pattern = lowercase(pattern);
-            }
-            
+
             p = strstr(p, pattern);
             if (p == NULL)
                 break;
