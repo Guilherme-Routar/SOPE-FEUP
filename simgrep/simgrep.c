@@ -5,10 +5,12 @@
 #include <dirent.h> //getDirContent
 #include <malloc.h>
 
-#define CURRENT ".";
+#define CURRENT_FOLDER ".";
 
 #define MAX_INSTANCES_PER_FOLDER 100
 #define MAX_INSTANCE_NAME 80
+
+#define LINE_MAX_LENGTH 255
 
 /**
 * CTRL+C should output an exit prompt. Continue if N, exit if Y 
@@ -37,11 +39,12 @@ void check_CTRL_C()
         fprintf(stderr, "Unable to install SIGINT handler\n");
 }
 
-char **initFolderArray() 
+char **initFolderArray()
 {
     int i = 0;
     char **folderContent = malloc(sizeof(char *) * MAX_INSTANCES_PER_FOLDER);
-    if (!folderContent) return NULL;
+    if (!folderContent)
+        return NULL;
     for (i = 0; i < MAX_INSTANCES_PER_FOLDER; i++)
     {
         folderContent[i] = malloc(MAX_INSTANCE_NAME + 1);
@@ -66,7 +69,7 @@ char **getFolderContent(char *directory)
         int index = 0;
         while ((dir = readdir(d)) != NULL)
         {
-            strncpy(folderContent[index], (char *) dir->d_name, MAX_INSTANCE_NAME);
+            strncpy(folderContent[index], (char *)dir->d_name, MAX_INSTANCE_NAME);
             index++;
         }
         closedir(d);
@@ -77,10 +80,57 @@ char **getFolderContent(char *directory)
 /**
 * Read from STDIN in case there is no cmd line argument for the file or directory
 **/
-void checkSTDIN() 
+void checkSTDIN()
 {
     if (!feof(stdin))
         fprintf(stderr, "stdin is empty\n");
+}
+
+/**
+ * Search substring pattern in file
+**/
+void searchPattern(char *pathToFile, char *pattern)
+{
+    FILE *fp;
+    fp = fopen(pathToFile, "r");
+    char line[LINE_MAX_LENGTH];
+    while (fgets(line, 100, fp))
+    {
+        if (strstr(line, pattern) != NULL)
+            printf("match in line: %s", line);
+    }
+}
+
+/**
+ * Search whole pattern in file
+ * https://stackoverflow.com/questions/42352846/matching-an-exact-word-using-in-c
+**/
+void searchWholePattern(char *pathToFile, char *pattern)
+{
+    FILE *fp;
+    fp = fopen(pathToFile, "r");
+    char line[LINE_MAX_LENGTH];
+    while (fgets(line, LINE_MAX_LENGTH, fp))
+    {
+        const char *p = line;
+        for (;;)
+        {
+            p = strstr(p, pattern);
+            if (p == NULL) break;
+
+            if ((p == line) || !isalnum((unsigned char)p[-1]))
+            {
+                p += strlen(pattern);
+                if (!isalnum((unsigned char)*p))
+                {
+                    printf("Match in line : %s\n", line);
+                    break; // found, quit
+                }
+            }
+            // substring was found, but no word match, move by 1 char and retry
+            p += 1;
+        }
+    }
 }
 
 int main(int argc, char *argv[])
@@ -96,22 +146,34 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Insuficient arguments\n");
         return 0;
     }
+    else if (argc == 3)
+    {
+        //no options
+    }
+    else
+    {
+        //handle options
+    }
 
     /**
      * [OPTIONS]
+     * 
      * -i : ignore letters size (upper, lower)
      * -l : display only the names of the files where the pattern is being searched 
-     * -n : indicate the number of the lines where the pattern should be searched
+     * -n : indicate the number of the lines where the pattern is being searched
      * -c : indicate how many lines it took to find the pattern
+     * 
      * -w : the pattern should be a full word
      * -r : search the pattern in every file below the indicated directory
     **/
 
     char **content = getFolderContent("testgrep");
 
-    printf("%s", content[0]);
+    char *pattern = "std";
+    //searchPattern("simgrep.c", pattern);
+    sch2("simgrep.c", pattern);
 
     //printf("leaving simgrep");
-    sleep(3);
+    sleep(2);
     return 0;
 }
