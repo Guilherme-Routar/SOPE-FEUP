@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 
     char *pattern = "std";
     //searchPattern("simgrep.c", pattern);
-    sch2("simgrep.c", pattern);
+    //searchWholePattern("simgrep.c", pattern);
 
     //printf("leaving simgrep");
     sleep(2);
