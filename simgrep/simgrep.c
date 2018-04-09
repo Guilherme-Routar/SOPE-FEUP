@@ -102,26 +102,52 @@ void checkSTDIN()
 }
 
 /**
+ * Turns string into lowercase
+**/
+char *lowercase(char *array)
+{
+    char *lowerArray = (char *)malloc(LINE_MAX_LENGTH);
+    for (int i = 0; array[i]; i++)
+    {
+        lowerArray[i] = tolower(array[i]);
+    }
+    return lowerArray;
+}
+
+/**
  * Search substring pattern in file
 **/
 void searchPattern(char *pathToFile, char *pattern)
 {
+    if (IGNORE_CASE)
+        printf("Ignoring case (-i)");
+
     FILE *fp;
     fp = fopen(pathToFile, "r");
-    char line[LINE_MAX_LENGTH];
+
+    char *line = (char *)malloc(LINE_MAX_LENGTH);
+
     int linecounter = 0;
-    while (fgets(line, 100, fp))
+
+    while (fgets(line, LINE_MAX_LENGTH, fp))
     {
-        if (IGNORE_CASE) {
-            tolower(line);
-            tolower(pattern);
+        if (IGNORE_CASE)
+        {
+            line = lowercase(line);
+            pattern = lowercase(pattern);
         }
+
         if (strstr(line, pattern) != NULL)
-            printf("match in line: %s", line);
-        linecounter++;
+        {
+            printf("\nmatch in line: %s", line);
+            linecounter++;
+        }
     }
-    if (LINE_COUNTER) 
-        printf("%d lines matched the pattern", linecounter);
+
+    free(line);
+
+    if (LINE_COUNTER)
+        printf("\n%d lines matched the pattern", linecounter);
 }
 
 /**
@@ -136,15 +162,19 @@ void searchWholePattern(char *pathToFile, char *pattern)
     fp = fopen(pathToFile, "r");
     char line[LINE_MAX_LENGTH];
     int linecounter = 0;
+    if (IGNORE_CASE)
+        printf("Ignoring case (-i)");
     while (fgets(line, LINE_MAX_LENGTH, fp))
     {
-        if (IGNORE_CASE) {
-            tolower(line);
-            tolower(pattern);
-        }
         const char *p = line;
         for (;;)
         {
+            if (IGNORE_CASE)
+            {
+                p = lowercase(line);
+                pattern = lowercase(pattern);
+            }
+            
             p = strstr(p, pattern);
             if (p == NULL)
                 break;
@@ -155,13 +185,13 @@ void searchWholePattern(char *pathToFile, char *pattern)
                 if (!isalnum((unsigned char)*p))
                 {
                     printf("Match in line : %s\n", line);
+                    linecounter++;
                     break; // found, quit
                 }
             }
             // substring was found, but no word match, move by 1 char and retry
             p += 1;
         }
-        linecounter++;
     }
     if (LINE_COUNTER)
         printf("%d lines matched the pattern", linecounter);
@@ -171,18 +201,18 @@ void parseOptions(int argc, char *argv[])
 {
     for (int i = 1; i < argc - 2; i++)
     {
-        if (strcmp(argv[i], "-i") == 0) 
+        if (strcmp(argv[i], "-i") == 0)
             IGNORE_CASE = 1;
-        if (strcmp(argv[i], "-l") == 0) 
-            FILE_NAME = 1;     
-        if (strcmp(argv[i], "-n") == 0) 
-            LINE_NUMBER = 1; 
-        if (strcmp(argv[i], "-c") == 0) 
-            LINE_COUNTER = 1; 
-        if (strcmp(argv[i], "-w") == 0) 
+        if (strcmp(argv[i], "-l") == 0)
+            FILE_NAME = 1;
+        if (strcmp(argv[i], "-n") == 0)
+            LINE_NUMBER = 1;
+        if (strcmp(argv[i], "-c") == 0)
+            LINE_COUNTER = 1;
+        if (strcmp(argv[i], "-w") == 0)
             WHOLE_WORD = 1;
-        if (strcmp(argv[i], "-r") == 0) 
-            TREE = 1;  
+        if (strcmp(argv[i], "-r") == 0)
+            TREE = 1;
     }
 }
 
@@ -191,7 +221,7 @@ int main(int argc, char *argv[])
 
     check_CTRL_C();
 
-    checkSTDIN();
+    //checkSTDIN();
 
     // User must insert at least a pattern and a file (or directory)
     if (argc < 3)
@@ -210,14 +240,11 @@ int main(int argc, char *argv[])
         char *pattern = argv[argc - 2];
         if (WHOLE_WORD)
             searchWholePattern(file, pattern);
-        else searchPattern(file, pattern);
+        else
+            searchPattern(file, pattern);
     }
 
     //char **content = getFolderContent("testgrep");
-
-    
-    
-
 
     sleep(2);
     return 0;
