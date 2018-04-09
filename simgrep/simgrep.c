@@ -39,7 +39,7 @@ void check_CTRL_C()
         fprintf(stderr, "Unable to install SIGINT handler\n");
 }
 
-char **initFolderArray()
+char** initFolderArray()
 {
     int i = 0;
     char **folderContent = malloc(sizeof(char *) * MAX_INSTANCES_PER_FOLDER);
@@ -57,7 +57,7 @@ char **initFolderArray()
     return folderContent;
 }
 
-char **getFolderContent(char *directory)
+char** getFolderContent(char *directory)
 {
     char **folderContent = initFolderArray();
 
@@ -89,7 +89,7 @@ void checkSTDIN()
 /**
  * Search substring pattern in file
 **/
-void searchPattern(char *pathToFile, char *pattern)
+void searchPattern(char *pathToFile, char *pattern, char *options)
 {
     FILE *fp;
     fp = fopen(pathToFile, "r");
@@ -105,7 +105,7 @@ void searchPattern(char *pathToFile, char *pattern)
  * Search whole pattern in file
  * https://stackoverflow.com/questions/42352846/matching-an-exact-word-using-in-c
 **/
-void searchWholePattern(char *pathToFile, char *pattern)
+void searchWholePattern(char *pathToFile, char *pattern, char *options)
 {
     FILE *fp;
     fp = fopen(pathToFile, "r");
@@ -116,7 +116,8 @@ void searchWholePattern(char *pathToFile, char *pattern)
         for (;;)
         {
             p = strstr(p, pattern);
-            if (p == NULL) break;
+            if (p == NULL)
+                break;
 
             if ((p == line) || !isalnum((unsigned char)p[-1]))
             {
@@ -131,6 +132,33 @@ void searchWholePattern(char *pathToFile, char *pattern)
             p += 1;
         }
     }
+}
+
+    /**
+     * [OPTIONS]
+     * 
+     * -i : ignore letters size (upper, lower)
+     * -l : display only the names of the files where the pattern is being searched 
+     * -n : indicate the number of the lines where the pattern matched
+     * -c : indicate how many lines it took to find the pattern
+     * 
+     * -w : the pattern should be a full word //DONE
+     * -r : search the pattern in every file below the indicated directory
+    **/
+char* parseOptions(int argc, char *argv[])
+{
+    char *options, *buffer;
+    buffer = malloc(sizeof(char) * 2 + 1);
+    options = malloc(sizeof(char) * 12 + 1);
+    strcpy(options, "");
+
+    for (int i = 1; i < argc - 2; i++)
+    {
+        strcpy(buffer, argv[i]);
+        strcat(options, buffer);
+    }
+
+    return options;
 }
 
 int main(int argc, char *argv[])
@@ -155,25 +183,14 @@ int main(int argc, char *argv[])
         //handle options
     }
 
-    /**
-     * [OPTIONS]
-     * 
-     * -i : ignore letters size (upper, lower)
-     * -l : display only the names of the files where the pattern is being searched 
-     * -n : indicate the number of the lines where the pattern is being searched
-     * -c : indicate how many lines it took to find the pattern
-     * 
-     * -w : the pattern should be a full word
-     * -r : search the pattern in every file below the indicated directory
-    **/
+    //char **content = getFolderContent("testgrep");
 
-    char **content = getFolderContent("testgrep");
+    char *file = "test.txt";
+    char *pattern = "int";
+    char *options = parseOptions(argc, argv);
+    searchPattern(file, pattern, options);
 
-    char *pattern = "std";
-    //searchPattern("simgrep.c", pattern);
-    //searchWholePattern("simgrep.c", pattern);
-
-    //printf("leaving simgrep");
+    
     sleep(2);
     return 0;
 }
