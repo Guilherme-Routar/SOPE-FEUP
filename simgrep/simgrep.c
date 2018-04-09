@@ -13,12 +13,12 @@
 /**
  * [OPTIONS]
 **/
-int IGNORE_CASE = 0;  // -i : Ignore letters case
-int FILE_NAME = 0;    // -l : Display the names of the files where the pattern is
-int LINE_NUMBER = 0;  // -n : Display the number of the lines where the pattern is
-int LINE_COUNTER = 0; // -c : Display how many lines match the pattern
-int WHOLE_WORD = 0;   // -w : The pattern is a whole word
-int TREE = 0;         // -r : Breadth-first search
+int IGNORE_CASE = 0;  // -i : Ignore letters case                                   - DONE
+int FILE_NAME = 0;    // -l : Display the names of the files where the pattern is   -
+int LINE_NUMBER = 0;  // -n : Display the number of the lines where the pattern is  -
+int LINE_COUNTER = 0; // -c : Display how many lines match the pattern              -
+int WHOLE_WORD = 0;   // -w : The pattern is a whole word                           - DONE
+int TREE = 0;         // -r : Breadth-first search                                  -
 
 /**
 * CTRL+C should output an exit prompt. Continue if N, exit if Y 
@@ -102,43 +102,46 @@ void checkSTDIN()
 }
 
 /**
-* [OPTIONS]
-* -i : ignore letters size (upper, lower)
-* -l : display only the names of the files where the pattern is being searched 
-* -n : indicate the number of the lines where the pattern matched
-* -c : indicate how many lines it took to find the pattern
-* -w : the pattern should be a full word //DONE
-* -r : search the pattern in every file below the indicated directory
-**/
-
-/**
  * Search substring pattern in file
 **/
-void searchPattern(char *pathToFile, char *pattern, char *options)
+void searchPattern(char *pathToFile, char *pattern)
 {
     FILE *fp;
     fp = fopen(pathToFile, "r");
     char line[LINE_MAX_LENGTH];
+    int linecounter = 0;
     while (fgets(line, 100, fp))
     {
+        if (IGNORE_CASE) {
+            tolower(line);
+            tolower(pattern);
+        }
         if (strstr(line, pattern) != NULL)
             printf("match in line: %s", line);
+        linecounter++;
     }
+    if (LINE_COUNTER) 
+        printf("%d lines matched the pattern", linecounter);
 }
 
 /**
  * Search whole pattern in file
  * https://stackoverflow.com/questions/42352846/matching-an-exact-word-using-in-c
 **/
-void searchWholePattern(char *pathToFile, char *pattern, char *options)
+void searchWholePattern(char *pathToFile, char *pattern)
 {
     printf("Searching whole pattern..\n");
 
     FILE *fp;
     fp = fopen(pathToFile, "r");
     char line[LINE_MAX_LENGTH];
+    int linecounter = 0;
     while (fgets(line, LINE_MAX_LENGTH, fp))
     {
+        if (IGNORE_CASE) {
+            tolower(line);
+            tolower(pattern);
+        }
         const char *p = line;
         for (;;)
         {
@@ -158,7 +161,10 @@ void searchWholePattern(char *pathToFile, char *pattern, char *options)
             // substring was found, but no word match, move by 1 char and retry
             p += 1;
         }
+        linecounter++;
     }
+    if (LINE_COUNTER)
+        printf("%d lines matched the pattern", linecounter);
 }
 
 void parseOptions(int argc, char *argv[])
@@ -199,23 +205,19 @@ int main(int argc, char *argv[])
     }
     else
     {
-        //handle options
+        parseOptions(argc, argv);
+        char *file = "test.txt";
+        char *pattern = argv[argc - 2];
+        if (WHOLE_WORD)
+            searchWholePattern(file, pattern);
+        else searchPattern(file, pattern);
     }
 
     //char **content = getFolderContent("testgrep");
 
-    char *file = "test.txt";
-    char *pattern = argv[argc - 2];
-    parseOptions(argc, argv);
+    
+    
 
-    //printf("%d", IGNORE_CASE);
-
-    /*
-    if (strstr(options, 'w') != NULL)
-        searchWholePattern(file, pattern, options);
-    else
-        searchPattern(file, pattern, options);
-    */
 
     sleep(2);
     return 0;
