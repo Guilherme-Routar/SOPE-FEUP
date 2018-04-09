@@ -6,11 +6,19 @@
 #include <malloc.h>
 
 #define CURRENT_FOLDER ".";
-
 #define MAX_INSTANCES_PER_FOLDER 100
 #define MAX_INSTANCE_NAME 80
-
 #define LINE_MAX_LENGTH 255
+
+/**
+ * [OPTIONS]
+**/
+int IGNORE_CASE = 0;  // -i : Ignore letters case
+int FILE_NAME = 0;    // -l : Display the names of the files where the pattern is
+int LINE_NUMBER = 0;  // -n : Display the number of the lines where the pattern is
+int LINE_COUNTER = 0; // -c : Display how many lines match the pattern
+int WHOLE_WORD = 0;   // -w : The pattern is a whole word
+int TREE = 0;         // -r : Breadth-first search
 
 /**
 * CTRL+C should output an exit prompt. Continue if N, exit if Y 
@@ -64,7 +72,7 @@ char **initFolderArray()
  * Get content from the given directory
  * Returns an array of strings, containing files and/or folders
 **/
-char** getFolderContent(char *directory)
+char **getFolderContent(char *directory)
 {
     char **folderContent = initFolderArray();
 
@@ -124,6 +132,8 @@ void searchPattern(char *pathToFile, char *pattern, char *options)
 **/
 void searchWholePattern(char *pathToFile, char *pattern, char *options)
 {
+    printf("Searching whole pattern..\n");
+
     FILE *fp;
     fp = fopen(pathToFile, "r");
     char line[LINE_MAX_LENGTH];
@@ -151,20 +161,23 @@ void searchWholePattern(char *pathToFile, char *pattern, char *options)
     }
 }
 
-char *parseOptions(int argc, char *argv[])
+void parseOptions(int argc, char *argv[])
 {
-    char *options, *buffer;
-    buffer = malloc(sizeof(char) * 2 + 1);
-    options = malloc(sizeof(char) * 12 + 1);
-    strcpy(options, "");
-
     for (int i = 1; i < argc - 2; i++)
     {
-        strcpy(buffer, argv[i]);
-        strcat(options, buffer);
+        if (strcmp(argv[i], "-i") == 0) 
+            IGNORE_CASE = 1;
+        if (strcmp(argv[i], "-l") == 0) 
+            FILE_NAME = 1;     
+        if (strcmp(argv[i], "-n") == 0) 
+            LINE_NUMBER = 1; 
+        if (strcmp(argv[i], "-c") == 0) 
+            LINE_COUNTER = 1; 
+        if (strcmp(argv[i], "-w") == 0) 
+            WHOLE_WORD = 1;
+        if (strcmp(argv[i], "-r") == 0) 
+            TREE = 1;  
     }
-
-    return options;
 }
 
 int main(int argc, char *argv[])
@@ -192,9 +205,17 @@ int main(int argc, char *argv[])
     //char **content = getFolderContent("testgrep");
 
     char *file = "test.txt";
-    char *pattern = "int";
-    char *options = parseOptions(argc, argv);
-    searchPattern(file, pattern, options);
+    char *pattern = argv[argc - 2];
+    parseOptions(argc, argv);
+
+    //printf("%d", IGNORE_CASE);
+
+    /*
+    if (strstr(options, 'w') != NULL)
+        searchWholePattern(file, pattern, options);
+    else
+        searchPattern(file, pattern, options);
+    */
 
     sleep(2);
     return 0;
