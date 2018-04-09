@@ -15,8 +15,8 @@
 **/
 int IGNORE_CASE = 0;  // -i : Ignore letters case                                   - DONE
 int FILE_NAME = 0;    // -l : Display the names of the files where the pattern is   -
-int LINE_NUMBER = 0;  // -n : Display the number of the lines where the pattern is  -
-int LINE_COUNTER = 0; // -c : Display how many lines match the pattern              -
+int LINE_NUMBER = 0;  // -n : Display the number of the lines where the pattern is  - DONE
+int LINE_COUNTER = 0; // -c : Display how many lines match the pattern              - DONE
 int WHOLE_WORD = 0;   // -w : The pattern is a whole word                           - DONE
 int TREE = 0;         // -r : Breadth-first search                                  -
 
@@ -127,7 +127,8 @@ void searchPattern(char *pathToFile, char *pattern)
 
     char *line = (char *)malloc(LINE_MAX_LENGTH);
 
-    int linecounter = 0;
+    int matches = 0;
+    int nLine = 1;
 
     while (fgets(line, LINE_MAX_LENGTH, fp))
     {
@@ -139,15 +140,18 @@ void searchPattern(char *pathToFile, char *pattern)
 
         if (strstr(line, pattern) != NULL)
         {
+            if (LINE_NUMBER)
+                printf("Match in line %d", nLine);
             printf("\nmatch in line: %s", line);
-            linecounter++;
+            matches++;
         }
+        nLine++;
     }
 
     free(line);
 
     if (LINE_COUNTER)
-        printf("\n%d lines matched the pattern", linecounter);
+        printf("\n%d lines matched the pattern", matches);
 }
 
 /**
@@ -164,6 +168,7 @@ void searchWholePattern(char *pathToFile, char *pattern)
     int linecounter = 0;
     if (IGNORE_CASE)
         printf("Ignoring case (-i)");
+    int nLine = 1;
     while (fgets(line, LINE_MAX_LENGTH, fp))
     {
         if (IGNORE_CASE)
@@ -184,6 +189,8 @@ void searchWholePattern(char *pathToFile, char *pattern)
                 p += strlen(pattern);
                 if (!isalnum((unsigned char)*p))
                 {
+                    if (LINE_NUMBER)
+                        printf("Match in line %d", nLine);
                     printf("Match in line : %s\n", line);
                     linecounter++;
                     break; // found, quit
@@ -192,7 +199,9 @@ void searchWholePattern(char *pathToFile, char *pattern)
             // substring was found, but no word match, move by 1 char and retry
             p += 1;
         }
+        nLine++;
     }
+    free(line);
     if (LINE_COUNTER)
         printf("%d lines matched the pattern", linecounter);
 }
