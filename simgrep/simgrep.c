@@ -39,7 +39,10 @@ void check_CTRL_C()
         fprintf(stderr, "Unable to install SIGINT handler\n");
 }
 
-char** initFolderArray()
+/**
+ * Initializes a 2D array with the defined macros
+**/
+char **initFolderArray()
 {
     int i = 0;
     char **folderContent = malloc(sizeof(char *) * MAX_INSTANCES_PER_FOLDER);
@@ -57,6 +60,10 @@ char** initFolderArray()
     return folderContent;
 }
 
+/**
+ * Get content from the given directory
+ * Returns an array of strings, containing files and/or folders
+**/
 char** getFolderContent(char *directory)
 {
     char **folderContent = initFolderArray();
@@ -85,6 +92,16 @@ void checkSTDIN()
     if (!feof(stdin))
         fprintf(stderr, "stdin is empty\n");
 }
+
+/**
+* [OPTIONS]
+* -i : ignore letters size (upper, lower)
+* -l : display only the names of the files where the pattern is being searched 
+* -n : indicate the number of the lines where the pattern matched
+* -c : indicate how many lines it took to find the pattern
+* -w : the pattern should be a full word //DONE
+* -r : search the pattern in every file below the indicated directory
+**/
 
 /**
  * Search substring pattern in file
@@ -134,18 +151,7 @@ void searchWholePattern(char *pathToFile, char *pattern, char *options)
     }
 }
 
-    /**
-     * [OPTIONS]
-     * 
-     * -i : ignore letters size (upper, lower)
-     * -l : display only the names of the files where the pattern is being searched 
-     * -n : indicate the number of the lines where the pattern matched
-     * -c : indicate how many lines it took to find the pattern
-     * 
-     * -w : the pattern should be a full word //DONE
-     * -r : search the pattern in every file below the indicated directory
-    **/
-char* parseOptions(int argc, char *argv[])
+char *parseOptions(int argc, char *argv[])
 {
     char *options, *buffer;
     buffer = malloc(sizeof(char) * 2 + 1);
@@ -190,7 +196,6 @@ int main(int argc, char *argv[])
     char *options = parseOptions(argc, argv);
     searchPattern(file, pattern, options);
 
-    
     sleep(2);
     return 0;
 }
