@@ -10,9 +10,11 @@
 #define MAX_INSTANCE_NAME 80
 #define LINE_MAX_LENGTH 255
 
-/**
- * [OPTIONS]
-**/
+/* FILE_STDIN = 1  : User input a file */
+/* FOLDER_STDIN = 1  : User input a folder */
+int FILE_STDIN = 0;
+int FOLDER_STDIN = 0;
+/* [OPTIONS] */
 int IGNORE_CASE = 0;  // -i : Ignore letters case                                   - DONE
 int FILE_NAME = 0;    // -l : Display the names of the files where the pattern is   -
 int LINE_NUMBER = 0;  // -n : Display the number of the lines where the pattern is  - DONE
@@ -166,8 +168,6 @@ void searchWholePattern(char *pathToFile, char *pattern)
     fp = fopen(pathToFile, "r");
     char *line = (char *)malloc(LINE_MAX_LENGTH);
     int linecounter = 0;
-    if (IGNORE_CASE)
-        printf("Ignoring case (-i)");
     int nLine = 1;
     while (fgets(line, LINE_MAX_LENGTH, fp))
     {
@@ -184,13 +184,13 @@ void searchWholePattern(char *pathToFile, char *pattern)
             if (p == NULL)
                 break;
 
-            if ((p == line) || !isalnum((unsigned char)p[-1]))
+            if ((p == line) || !((unsigned char)p[-1]))
             {
                 p += strlen(pattern);
                 if (!isalnum((unsigned char)*p))
                 {
                     if (LINE_NUMBER)
-                        printf("Match in line %d", nLine);
+                        printf("Match in line #%d", nLine);
                     printf("Match in line : %s\n", line);
                     linecounter++;
                     break; // found, quit
@@ -206,22 +206,105 @@ void searchWholePattern(char *pathToFile, char *pattern)
         printf("%d lines matched the pattern", linecounter);
 }
 
-void parseOptions(int argc, char *argv[])
+/**
+ * String reverser
+ * https://stackoverflow.com/questions/8534274/is-the-strrev-function-not-available-in-linux
+**/
+char *strrev(char *str)
 {
-    for (int i = 1; i < argc - 2; i++)
+    char *p1, *p2;
+    if (!str || !*str)
+        return str;
+    for (p1 = str, p2 = str + strlen(str) - 1; p2 > p1; ++p1, --p2)
     {
-        if (strcmp(argv[i], "-i") == 0)
-            IGNORE_CASE = 1;
-        if (strcmp(argv[i], "-l") == 0)
-            FILE_NAME = 1;
-        if (strcmp(argv[i], "-n") == 0)
-            LINE_NUMBER = 1;
-        if (strcmp(argv[i], "-c") == 0)
-            LINE_COUNTER = 1;
-        if (strcmp(argv[i], "-w") == 0)
-            WHOLE_WORD = 1;
-        if (strcmp(argv[i], "-r") == 0)
-            TREE = 1;
+        *p1 ^= *p2;
+        *p2 ^= *p1;
+        *p1 ^= *p2;
+    }
+    return str;
+}
+
+char *parseOptions(int argc, char *argv[])
+{
+    if (argc < 3)
+    {
+        fprintf(stderr, "Insuficient arguments\n");
+        return 0;
+    }
+    else
+    {
+        for (int i = 1; i < argc - 2; i++)
+        {
+            if (strcmp(argv[i], "-i") == 0)
+                IGNORE_CASE = 1;
+            if (strcmp(argv[i], "-l") == 0)
+                FILE_NAME = 1;
+            if (strcmp(argv[i], "-n") == 0)
+                LINE_NUMBER = 1;
+            if (strcmp(argv[i], "-c") == 0)
+                LINE_COUNTER = 1;
+            if (strcmp(argv[i], "-w") == 0)
+                WHOLE_WORD = 1;
+            if (strcmp(argv[i], "-r") == 0)
+                TREE = 1;
+        }
+
+        //checking if second-to-last argument is a flag
+        //if so, file/folder was skipped by the user
+        if (strncmp(argv[argc - 2], "-flag", 1) == 0)
+        {
+            checkSTDIN();
+        }
+        else
+        {
+            char *file = argv[argc - 1];
+            strrev(file);
+            if (strncmp(file, "txt.", 4) != 0)
+            {
+                FOLDER_STDIN = 1;
+                FILE_STDIN = 0;
+            }
+            else
+            {
+                FOLDER_STDIN = 0;
+                FILE_STDIN = 1;
+            }
+
+            if (FOLDER_STDIN)
+            {
+                char *folder = argv[argc - 1];
+                char **foldercontet = getFolderContent(folder);
+                if (!TREE) {
+
+                }
+                else {
+
+                }
+            }
+            else
+            {
+                char *pattern = argv[argc - 2];
+                /*
+                char *file2;
+                memset(file2, '0', 10);
+                //memset(pattern, '0', 10);
+                 char *pattern = argv[argc - 2];
+                strncpy(file2, argv[argc - 1], strlen(argv[argc - 1]));
+                //strncpy(pattern, argv[argc - 2], strlen(argv[argc - 2]));
+                */
+
+
+                printf("pattern = %s", pattern);
+                
+                /*
+                if (WHOLE_WORD)
+                    searchWholePattern(file, pattern);
+                else
+                    searchPattern(file, pattern);
+                */
+                    
+            }
+        }
     }
 }
 
@@ -230,30 +313,7 @@ int main(int argc, char *argv[])
 
     check_CTRL_C();
 
-    //checkSTDIN();
-
-    // User must insert at least a pattern and a file (or directory)
-    if (argc < 3)
-    {
-        fprintf(stderr, "Insuficient arguments\n");
-        return 0;
-    }
-    else if (argc == 3)
-    {
-        //no options
-    }
-    else
-    {
-        parseOptions(argc, argv);
-        char *file = "test.txt";
-        char *pattern = argv[argc - 2];
-        if (WHOLE_WORD)
-            searchWholePattern(file, pattern);
-        else
-            searchPattern(file, pattern);
-    }
-
-    //char **content = getFolderContent("testgrep");
+    parseOptions(argc, argv);
 
     sleep(2);
     return 0;
