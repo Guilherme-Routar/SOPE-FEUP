@@ -270,7 +270,7 @@ void parseOptions(int argc, char *argv[])
         else
         {
             char *object = argv[argc - 1];
-            const char *extension = &object[strlen(object)-4];
+            const char *extension = &object[strlen(object) - 4];
             if (strncmp(extension, ".txt", 4) != 0)
             {
                 FOLDER_STDIN = 1;
@@ -287,17 +287,27 @@ void parseOptions(int argc, char *argv[])
                 char **foldercontent = getFolderContent(object);
                 if (!TREE)
                 {
-                    size_t size = sizeof(foldercontent)/sizeof(foldercontent[0]);
-                    for (int i = 0; i < size; i++) {
-                        const char *extension = &foldercontent[i][strlen(foldercontent[i])-4];
-                        printf("%d", size);
-                        if (strncmp(extension, ".txt", 4) == 0) {
-                            printf("%s", foldercontent[i]);
+                    // Checking for txt files
+                    for (int i = 0; i < foldercontent[i]; i++)
+                    {
+                        const char *extension = &foldercontent[i][strlen(foldercontent[i]) - 4];
+                        if (strncmp(extension, ".txt", 4) == 0)
+                        {
+                            printf("s = %s\n", foldercontent[i]);
                         }
                     }
                 }
                 else
                 {
+                    // Checking for txt files
+                    for (int i = 0; i < foldercontent[i]; i++)
+                    {
+                        const char *extension = &foldercontent[i][strlen(foldercontent[i]) - 4];
+                        if (strncmp(extension, ".txt", 4) == 0)
+                        {
+                            printf("s = %s\n", foldercontent[i]);
+                        }
+                    }
                 }
             }
             else
