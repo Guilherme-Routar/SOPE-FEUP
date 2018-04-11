@@ -236,6 +236,32 @@ char *strrev(char *str)
     return str;
 }
 
+void searchHandler(char **folderContent)
+{
+    // Checking for txt files
+    for (int i = 0; i < folderContent[i]; i++)
+    {
+        const char *extension = &folderContent[i][strlen(folderContent[i]) - 4];
+        if (strncmp(extension, ".txt", 4) == 0)
+        {
+            printf("s = %s\n", folderContent[i]);
+        }
+    }
+}
+
+void treeSearchHandler(char **folderContent)
+{
+    // Checking for txt files
+    for (int i = 0; i < folderContent[i]; i++)
+    {
+        const char *extension = &folderContent[i][strlen(folderContent[i]) - 4];
+        if (strncmp(extension, ".txt", 4) == 0)
+        {
+            printf("s = %s\n", folderContent[i]);
+        }
+    }
+}
+
 void parseOptions(int argc, char *argv[])
 {
     if (argc < 3)
@@ -284,31 +310,11 @@ void parseOptions(int argc, char *argv[])
 
             if (FOLDER_STDIN)
             {
-                char **foldercontent = getFolderContent(object);
+                char **folderContent = getFolderContent(object);
                 if (!TREE)
-                {
-                    // Checking for txt files
-                    for (int i = 0; i < foldercontent[i]; i++)
-                    {
-                        const char *extension = &foldercontent[i][strlen(foldercontent[i]) - 4];
-                        if (strncmp(extension, ".txt", 4) == 0)
-                        {
-                            printf("s = %s\n", foldercontent[i]);
-                        }
-                    }
-                }
+                    searchHandler(folderContent);
                 else
-                {
-                    // Checking for txt files
-                    for (int i = 0; i < foldercontent[i]; i++)
-                    {
-                        const char *extension = &foldercontent[i][strlen(foldercontent[i]) - 4];
-                        if (strncmp(extension, ".txt", 4) == 0)
-                        {
-                            printf("s = %s\n", foldercontent[i]);
-                        }
-                    }
-                }
+                    treeSearchHandler(folderContent);
             }
             else
             {
