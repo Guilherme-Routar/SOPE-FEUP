@@ -224,7 +224,7 @@ char *strrev(char *str)
     return str;
 }
 
-char *parseOptions(int argc, char *argv[])
+void parseOptions(int argc, char *argv[])
 {
     if (argc < 3)
     {
@@ -274,35 +274,22 @@ char *parseOptions(int argc, char *argv[])
             {
                 char *folder = argv[argc - 1];
                 char **foldercontet = getFolderContent(folder);
-                if (!TREE) {
-
+                if (!TREE)
+                {
                 }
-                else {
-
+                else
+                {
                 }
             }
             else
             {
+                strrev(file);
                 char *pattern = argv[argc - 2];
-                /*
-                char *file2;
-                memset(file2, '0', 10);
-                //memset(pattern, '0', 10);
-                 char *pattern = argv[argc - 2];
-                strncpy(file2, argv[argc - 1], strlen(argv[argc - 1]));
-                //strncpy(pattern, argv[argc - 2], strlen(argv[argc - 2]));
-                */
-
-
-                printf("pattern = %s", pattern);
-                
-                /*
                 if (WHOLE_WORD)
                     searchWholePattern(file, pattern);
                 else
                     searchPattern(file, pattern);
-                */
-                    
+                
             }
         }
     }
