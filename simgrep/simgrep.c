@@ -127,33 +127,39 @@ void searchPattern(char *pathToFile, char *pattern)
     FILE *fp;
     fp = fopen(pathToFile, "r");
 
-    char *line = (char *)malloc(LINE_MAX_LENGTH);
-
-    int matches = 0;
-    int nLine = 1;
-
-    while (fgets(line, LINE_MAX_LENGTH, fp))
+    if (fp != NULL)
     {
-        if (IGNORE_CASE)
+
+        char *line = (char *)malloc(LINE_MAX_LENGTH);
+
+        int matches = 0;
+        int nLine = 1;
+
+        while (fgets(line, LINE_MAX_LENGTH, fp))
         {
-            line = lowercase(line);
-            pattern = lowercase(pattern);
+            if (IGNORE_CASE)
+            {
+                line = lowercase(line);
+                pattern = lowercase(pattern);
+            }
+
+            if (strstr(line, pattern) != NULL)
+            {
+                if (LINE_NUMBER)
+                    printf("Match in line %d", nLine);
+                printf("\nmatch in line: %s", line);
+                matches++;
+            }
+            nLine++;
         }
 
-        if (strstr(line, pattern) != NULL)
-        {
-            if (LINE_NUMBER)
-                printf("Match in line %d", nLine);
-            printf("\nmatch in line: %s", line);
-            matches++;
-        }
-        nLine++;
+        free(line);
+
+        if (LINE_COUNTER)
+            printf("\n%d lines matched the pattern", matches);
     }
-
-    free(line);
-
-    if (LINE_COUNTER)
-        printf("\n%d lines matched the pattern", matches);
+    else
+        fprintf(stderr, "Unable to find specified file");
 }
 
 /**
@@ -166,44 +172,49 @@ void searchWholePattern(char *pathToFile, char *pattern)
 
     FILE *fp;
     fp = fopen(pathToFile, "r");
-    char *line = (char *)malloc(LINE_MAX_LENGTH);
-    int linecounter = 0;
-    int nLine = 1;
-    while (fgets(line, LINE_MAX_LENGTH, fp))
+    if (fp != NULL)
     {
-        if (IGNORE_CASE)
+        char *line = (char *)malloc(LINE_MAX_LENGTH);
+        int linecounter = 0;
+        int nLine = 1;
+        while (fgets(line, LINE_MAX_LENGTH, fp))
         {
-            line = lowercase(line);
-            pattern = lowercase(pattern);
-        }
-        const char *p = line;
-        for (;;)
-        {
-
-            p = strstr(p, pattern);
-            if (p == NULL)
-                break;
-
-            if ((p == line) || !((unsigned char)p[-1]))
+            if (IGNORE_CASE)
             {
-                p += strlen(pattern);
-                if (!isalnum((unsigned char)*p))
-                {
-                    if (LINE_NUMBER)
-                        printf("Match in line #%d", nLine);
-                    printf("Match in line : %s\n", line);
-                    linecounter++;
-                    break; // found, quit
-                }
+                line = lowercase(line);
+                pattern = lowercase(pattern);
             }
-            // substring was found, but no word match, move by 1 char and retry
-            p += 1;
+            const char *p = line;
+            for (;;)
+            {
+
+                p = strstr(p, pattern);
+                if (p == NULL)
+                    break;
+
+                if ((p == line) || !((unsigned char)p[-1]))
+                {
+                    p += strlen(pattern);
+                    if (!isalnum((unsigned char)*p))
+                    {
+                        if (LINE_NUMBER)
+                            printf("Match in line #%d", nLine);
+                        printf("Match in line : %s\n", line);
+                        linecounter++;
+                        break; // found, quit
+                    }
+                }
+                // substring was found, but no word match, move by 1 char and retry
+                p += 1;
+            }
+            nLine++;
         }
-        nLine++;
+        free(line);
+        if (LINE_COUNTER)
+            printf("%d lines matched the pattern", linecounter);
     }
-    free(line);
-    if (LINE_COUNTER)
-        printf("%d lines matched the pattern", linecounter);
+    else
+        fprintf(stderr, "Unable to find specified file");
 }
 
 /**
@@ -224,7 +235,7 @@ char *strrev(char *str)
     return str;
 }
 
-void parseOptions(int argc, char *argv[])
+void clearparseOptions(int argc, char *argv[])
 {
     if (argc < 3)
     {
@@ -283,13 +294,13 @@ void parseOptions(int argc, char *argv[])
             }
             else
             {
+                // File search
                 strrev(file);
                 char *pattern = argv[argc - 2];
                 if (WHOLE_WORD)
                     searchWholePattern(file, pattern);
                 else
                     searchPattern(file, pattern);
-                
             }
         }
     }
