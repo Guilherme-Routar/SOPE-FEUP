@@ -121,8 +121,7 @@ char *lowercase(char *array)
 **/
 void searchPattern(char *pathToFile, char *pattern)
 {
-    if (IGNORE_CASE)
-        printf("Ignoring case (-i)");
+    // CHECK FOR NEWLINES BEFORE OR AFTER THE PATTERN
 
     FILE *fp;
     fp = fopen(pathToFile, "r");
@@ -156,7 +155,7 @@ void searchPattern(char *pathToFile, char *pattern)
         free(line);
 
         if (LINE_COUNTER)
-            printf("\n%d lines matched the pattern", matches);
+            printf("%d line(s) matched the pattern\n", matches);
     }
     else
         fprintf(stderr, "Unable to find specified file");
@@ -168,7 +167,9 @@ void searchPattern(char *pathToFile, char *pattern)
 **/
 void searchWholePattern(char *pathToFile, char *pattern)
 {
-    printf("Searching whole pattern..\n");
+    // CHECK FOR NEWLINES BEFORE OR AFTER THE PATTERN
+
+    printf("Searching whole pattern.. = %s\n", pattern);
 
     FILE *fp;
     fp = fopen(pathToFile, "r");
@@ -198,7 +199,7 @@ void searchWholePattern(char *pathToFile, char *pattern)
                     if (!isalnum((unsigned char)*p))
                     {
                         if (LINE_NUMBER)
-                            printf("Match in line #%d", nLine);
+                            printf("Match in line #%d\n", nLine);
                         printf("Match in line : %s\n", line);
                         linecounter++;
                         break; // found, quit
@@ -211,7 +212,7 @@ void searchWholePattern(char *pathToFile, char *pattern)
         }
         free(line);
         if (LINE_COUNTER)
-            printf("%d lines matched the pattern", linecounter);
+            printf("%d line(s) matched the pattern\nclear", linecounter);
     }
     else
         fprintf(stderr, "Unable to find specified file");
@@ -235,12 +236,12 @@ char *strrev(char *str)
     return str;
 }
 
-void clearparseOptions(int argc, char *argv[])
+void parseOptions(int argc, char *argv[])
 {
     if (argc < 3)
     {
         fprintf(stderr, "Insuficient arguments\n");
-        return 0;
+        exit(0);
     }
     else
     {
@@ -268,9 +269,9 @@ void clearparseOptions(int argc, char *argv[])
         }
         else
         {
-            char *file = argv[argc - 1];
-            strrev(file);
-            if (strncmp(file, "txt.", 4) != 0)
+            char *object = argv[argc - 1];
+            const char *extension = &object[strlen(object)-4];
+            if (strncmp(extension, ".txt", 4) != 0)
             {
                 FOLDER_STDIN = 1;
                 FILE_STDIN = 0;
@@ -283,10 +284,17 @@ void clearparseOptions(int argc, char *argv[])
 
             if (FOLDER_STDIN)
             {
-                char *folder = argv[argc - 1];
-                char **foldercontet = getFolderContent(folder);
+                char **foldercontent = getFolderContent(object);
                 if (!TREE)
                 {
+                    size_t size = sizeof(foldercontent)/sizeof(foldercontent[0]);
+                    for (int i = 0; i < size; i++) {
+                        const char *extension = &foldercontent[i][strlen(foldercontent[i])-4];
+                        printf("%d", size);
+                        if (strncmp(extension, ".txt", 4) == 0) {
+                            printf("%s", foldercontent[i]);
+                        }
+                    }
                 }
                 else
                 {
@@ -295,12 +303,11 @@ void clearparseOptions(int argc, char *argv[])
             else
             {
                 // File search
-                strrev(file);
                 char *pattern = argv[argc - 2];
                 if (WHOLE_WORD)
-                    searchWholePattern(file, pattern);
+                    searchWholePattern(object, pattern);
                 else
-                    searchPattern(file, pattern);
+                    searchPattern(object, pattern);
             }
         }
     }
@@ -313,6 +320,5 @@ int main(int argc, char *argv[])
 
     parseOptions(argc, argv);
 
-    sleep(2);
     return 0;
 }
