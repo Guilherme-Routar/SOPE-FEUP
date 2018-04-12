@@ -124,11 +124,11 @@ void searchPattern(char *pathToFile, char *pattern)
     // CHECK FOR NEWLINES BEFORE OR AFTER THE PATTERN
 
     FILE *fp;
-    fp = fopen(pathToFile, "r");
+    char *path = "testgrep/testgrep.txt";
+    fp = fopen(path, "r");
 
     if (fp != NULL)
     {
-
         char *line = (char *)malloc(LINE_MAX_LENGTH);
 
         int matches = 0;
@@ -145,8 +145,9 @@ void searchPattern(char *pathToFile, char *pattern)
             if (strstr(line, pattern) != NULL)
             {
                 if (LINE_NUMBER)
-                    printf("Match in line %d", nLine);
-                printf("\nmatch in line: %s", line);
+                    printf("Match in line %d\n", nLine);
+                printf("File: %s\n", pathToFile);
+                printf("Text: %s\n", line);
                 matches++;
             }
             nLine++;
@@ -158,7 +159,7 @@ void searchPattern(char *pathToFile, char *pattern)
             printf("%d line(s) matched the pattern\n", matches);
     }
     else
-        fprintf(stderr, "Unable to find specified file");
+        fprintf(stderr, "Unable to find specified file\n");
 }
 
 /**
@@ -215,7 +216,7 @@ void searchWholePattern(char *pathToFile, char *pattern)
             printf("%d line(s) matched the pattern\nclear", linecounter);
     }
     else
-        fprintf(stderr, "Unable to find specified file");
+        fprintf(stderr, "Unable to find specified file\n");
 }
 
 /**
@@ -236,23 +237,23 @@ char *strrev(char *str)
     return str;
 }
 
-void searchHandler(char **folderContent)
+void folderSearch(char **folderContent, char *pattern)
 {
     // Checking for txt files
-    for (int i = 0; i < folderContent[i]; i++)
+    for (int i = 0; folderContent[i]; i++)
     {
         const char *extension = &folderContent[i][strlen(folderContent[i]) - 4];
         if (strncmp(extension, ".txt", 4) == 0)
         {
-            printf("s = %s\n", folderContent[i]);
+            searchPattern(folderContent[i], pattern);
         }
     }
 }
 
-void treeSearchHandler(char **folderContent)
+void deepFolderSearch(char **folderContent, char *pattern)
 {
     // Checking for txt files
-    for (int i = 0; i < folderContent[i]; i++)
+    for (int i = 0; folderContent[i]; i++)
     {
         const char *extension = &folderContent[i][strlen(folderContent[i]) - 4];
         if (strncmp(extension, ".txt", 4) == 0)
@@ -308,18 +309,18 @@ void parseOptions(int argc, char *argv[])
                 FILE_STDIN = 1;
             }
 
+            char *pattern = argv[argc - 2];
             if (FOLDER_STDIN)
             {
                 char **folderContent = getFolderContent(object);
                 if (!TREE)
-                    searchHandler(folderContent);
+                    folderSearch(folderContent, pattern);
                 else
-                    treeSearchHandler(folderContent);
+                    deepFolderSearch(folderContent, pattern);
             }
             else
             {
                 // File search
-                char *pattern = argv[argc - 2];
                 if (WHOLE_WORD)
                     searchWholePattern(object, pattern);
                 else
