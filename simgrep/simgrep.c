@@ -10,17 +10,18 @@
 #define MAX_INSTANCE_NAME 80
 #define LINE_MAX_LENGTH 255
 
-/* FILE_STDIN = 1  : User input a file */
-/* FOLDER_STDIN = 1  : User input a folder */
-int FILE_STDIN = 0;
-int FOLDER_STDIN = 0;
+int FILE_STDIN = 0; /* FILE_STDIN = 1  : User input a file */
+int FOLDER_STDIN = 0;/* FOLDER_STDIN = 1  : User input a folder */
+
 /* [OPTIONS] */
 int IGNORE_CASE = 0;  // -i : Ignore letters case                                   - DONE
-int FILE_NAME = 0;    // -l : Display the names of the files where the pattern is   -
+int FILE_NAME = 0;    // -l : Display the names of the files where the pattern is   - DONE
 int LINE_NUMBER = 0;  // -n : Display the number of the lines where the pattern is  - DONE
 int LINE_COUNTER = 0; // -c : Display how many lines match the pattern              - DONE
 int WHOLE_WORD = 0;   // -w : The pattern is a whole word                           - DONE
 int TREE = 0;         // -r : Breadth-first search                                  -
+
+char *CURRENT_PATH = ".";
 
 /**
 * CTRL+C should output an exit prompt. Continue if N, exit if Y 
@@ -119,12 +120,17 @@ char *lowercase(char *array)
 /**
  * Search substring pattern in file
 **/
-void searchPattern(char *pathToFile, char *pattern)
+void searchPattern(char *instance, char *fileName, char *pattern)
 {
     // CHECK FOR NEWLINES BEFORE OR AFTER THE PATTERN
 
     FILE *fp;
-    char *path = "testgrep/testgrep.txt";
+    char *path = instance;
+    printf("PATH after assign = %s\n", path);
+    strcat(path, "/");
+    printf("Instance = %s\n", instance);
+    strcat(path, fileName);
+    printf("PATH = %s\n", path);
     fp = fopen(path, "r");
 
     if (fp != NULL)
@@ -146,7 +152,7 @@ void searchPattern(char *pathToFile, char *pattern)
             {
                 if (LINE_NUMBER)
                     printf("Match in line %d\n", nLine);
-                printf("File: %s\n", pathToFile);
+                printf("File: %s\n", fileName);
                 printf("Text: %s\n", line);
                 matches++;
             }
@@ -237,21 +243,24 @@ char *strrev(char *str)
     return str;
 }
 
-void folderSearch(char **folderContent, char *pattern)
+void folderSearch(char *instance, char *pattern)
 {
+    char **folderContent = getFolderContent(instance);
     // Checking for txt files
     for (int i = 0; folderContent[i]; i++)
     {
         const char *extension = &folderContent[i][strlen(folderContent[i]) - 4];
         if (strncmp(extension, ".txt", 4) == 0)
         {
-            searchPattern(folderContent[i], pattern);
+            printf("Instance = %s\n", instance);
+            searchPattern(instance, folderContent[i], pattern);
         }
     }
 }
 
-void deepFolderSearch(char **folderContent, char *pattern)
+void deepFolderSearch(char *instance, char *pattern)
 {
+    char **folderContent = getFolderContent(instance);
     // Checking for txt files
     for (int i = 0; folderContent[i]; i++)
     {
@@ -296,8 +305,8 @@ void parseOptions(int argc, char *argv[])
         }
         else
         {
-            char *object = argv[argc - 1];
-            const char *extension = &object[strlen(object) - 4];
+            char *instance = argv[argc - 1];
+            const char *extension = &instance[strlen(instance) - 4];
             if (strncmp(extension, ".txt", 4) != 0)
             {
                 FOLDER_STDIN = 1;
@@ -312,19 +321,18 @@ void parseOptions(int argc, char *argv[])
             char *pattern = argv[argc - 2];
             if (FOLDER_STDIN)
             {
-                char **folderContent = getFolderContent(object);
                 if (!TREE)
-                    folderSearch(folderContent, pattern);
+                    folderSearch(instance, pattern);
                 else
-                    deepFolderSearch(folderContent, pattern);
+                    deepFolderSearch(instance, pattern);
             }
             else
             {
                 // File search
                 if (WHOLE_WORD)
-                    searchWholePattern(object, pattern);
+                    searchWholePattern(instance, pattern);
                 else
-                    searchPattern(object, pattern);
+                    searchPattern(CURRENT_PATH, instance, pattern);
             }
         }
     }

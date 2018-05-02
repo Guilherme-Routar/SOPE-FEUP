@@ -22,6 +22,7 @@ int main(void)
 
     // b)
     if (fork() > 0) {
+        sleep(2);
         printf("Hello, ");
     }
     else {
