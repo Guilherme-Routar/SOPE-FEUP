@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
         write(fd[WRITE], &n, 2 * sizeof(int));
         close(fd[WRITE]);
 
-        int result = 0;
+        int result;
         close(fd2[WRITE]);
         read(fd2[READ], &result, sizeof(int));
         printf("result = %d", result);
@@ -37,12 +37,13 @@ int main(int argc, char *argv[])
     }
     else if (pid == 0) //child
     {
+        
         struct numbers n;
         close(fd[WRITE]);
         read(fd[READ], &n, 2 * sizeof(int));
-        int result = n.n1 + n.n2;
         close(fd[READ]);
 
+        int result = n.n1 + n.n2;
         close(fd2[READ]);
         write(fd2[WRITE], &result, sizeof(int));
         close(fd2[WRITE]);
