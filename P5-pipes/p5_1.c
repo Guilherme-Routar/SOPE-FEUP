@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
     if (pid > 0) //dad
     {
         struct numbers n;
+        printf("x y ? ");
         scanf("%d %d", &n.n1, &n.n2);
         close(fd[READ]);
         write(fd[WRITE], &n, 2 * sizeof(int));
@@ -32,7 +33,7 @@ int main(int argc, char *argv[])
         struct numbers n;
         close(fd[WRITE]);
         read(fd[READ], &n, 2 * sizeof(int));
-        printf("%d", n.n1 + n.n2);
+        printf("result = %d", n.n1 + n.n2);
         close(fd[READ]);
     }
 
