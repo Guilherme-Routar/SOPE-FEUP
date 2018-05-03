@@ -11,6 +11,8 @@ int main(int argc, char *argv[])
 
     // ls <dir> -laR | grep <arg> | sort
 
+    int status;
+
     int fd_ls_grep[2];
     int fd_grep_sort[2];
     pipe(fd_ls_grep);
@@ -63,4 +65,7 @@ int main(int argc, char *argv[])
             execlp("sort", "sort", NULL);
         }
     }
+
+    for (int i = 0; i < 2; i++)
+        wait(&status);
 }
