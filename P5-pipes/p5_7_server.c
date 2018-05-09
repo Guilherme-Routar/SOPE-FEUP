@@ -8,10 +8,6 @@
  * Posts the (sum) result to fifo_ans
 **/
 
-int readline(int fd, char *str);
-
-
-
 int main(int argc, char *argv[])
 {
     int fd_req, fd_ans;
@@ -42,14 +38,4 @@ int main(int argc, char *argv[])
     close(fd_ans);
 
     return 0;
-}
-
-int readline(int fd, char *str)
-{
-    int n;
-    do
-    {
-        n = read(fd, str, 1);
-    } while (n > 0 && *str++ != '\0');
-    return (n > 0);
 }
