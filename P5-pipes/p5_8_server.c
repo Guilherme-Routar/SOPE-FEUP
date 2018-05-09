@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     
     clock_t initial_time = clock();
 
-    int fd;
+    int fd, n;
     mkfifo("/tmp/fifo_chg", 0660);
 
     //reading input from client
@@ -18,11 +18,12 @@ int main(int argc, char *argv[])
 
     clock_t current_time = initial_time;
     while ((current_time - initial_time) < 500)
-    {    
+    {
         current_time = clock();
-        read(fd, str, sizeof(str));
-        puts(str);
-        
+
+        n = read(fd, str, sizeof(str));
+        if (n > 0) puts(str);
+
         sleep(1);
     }
     printf("Time elapsed");
