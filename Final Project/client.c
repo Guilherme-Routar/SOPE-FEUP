@@ -71,9 +71,16 @@ struct request parse_args(char *arglist[])
   // MAX_CLI_SEATS - n = number of "unassigned" seats (-1)
   int i = 0;
   char *token = strtok(arglist[3], " ");
+  int seatnumber;
   while (token != NULL)
   {
-    req.pref_seat_list[i++] = strtol(token, &end, 10);
+    seatnumber = strtol(token, &end, 10);
+    if (seatnumber > MAX_ROOM_SEATS) 
+    {
+      fprintf(stderr, "Unexistent seat number");
+      exit(0);
+    }
+    req.pref_seat_list[i++] = seatnumber;
     token = strtok(NULL, " ");
   }
 
