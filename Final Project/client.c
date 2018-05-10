@@ -12,7 +12,8 @@
 #define MAX_FIFO_LENGTH 8 // Fifo's name max length
 
 void create_fifo_ans();
-void send_request(char *arglist[]);
+struct request parse_args(char *arglist[]);
+void send_request(struct request req);
 
 int main(int argc, char *argv[])
 {
@@ -27,12 +28,28 @@ int main(int argc, char *argv[])
   //create_fifo_ans();
 
   /* Sending server a request through FIFO requests */
-  send_request(argv);
+  send_request(parse_args(argv));
 
   return 0;
 }
 
-void send_request(char *arglist[])
+void create_fifo_ans()
+{
+  pid_t mypid = getpid();
+
+  char fifo_ans[MAX_FIFO_LENGTH];
+  sprintf(fifo_ans, "ans%ld", mypid);
+
+  if (mkfifo(fifo_ans, 0660) < 0)
+    if (errno == EEXIST)
+      printf("FIFO already created for the client with PID = %d\n", mypid);
+    else
+      printf("Can't create FIFO for the client with PID = %d\n", mypid);
+  else
+    printf("FIFO %s sucessfully created\n", fifo_ans);
+}
+
+struct request parse_args(char *arglist[])
 {
   struct request req;
   char *end;
@@ -54,6 +71,11 @@ void send_request(char *arglist[])
     p = strtok(NULL, " ");
   }
 
+  return req;
+}
+
+void send_request(struct request req)
+{
   // Attempting to open the fifo requests
   int fdreq;
   do
@@ -65,21 +87,5 @@ void send_request(char *arglist[])
   // Sending struct request to fifo requests
   write(fdreq, &req, 101 * sizeof(int));
 
-  close(fdreq); 
-}
-
-void create_fifo_ans()
-{
-  pid_t mypid = getpid();
-
-  char fifo_ans[MAX_FIFO_LENGTH];
-  sprintf(fifo_ans, "ans%ld", mypid);
-
-  if (mkfifo(fifo_ans, 0660) < 0)
-    if (errno == EEXIST)
-      printf("FIFO already created for the client with PID = %d\n", mypid);
-    else
-      printf("Can't create FIFO for the client with PID = %d\n", mypid);
-  else
-    printf("FIFO %s sucessfully created\n", fifo_ans);
+  close(fdreq);
 }
