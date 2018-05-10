@@ -10,10 +10,12 @@
 #include "request.h"
 
 #define MAX_FIFO_LENGTH 8 // Fifo's name max length
+#define REQUEST_TIMEOUT 5 // Number of seconds to wait for fifo request to open
 
 void create_fifo_ans();
 struct request parse_args(char *arglist[]);
 void send_request(struct request req);
+void wait_answer();
 
 int main(int argc, char *argv[])
 {
@@ -30,13 +32,17 @@ int main(int argc, char *argv[])
   /* Sending server a request through FIFO requests */
   send_request(parse_args(argv));
 
+  /* Wait for an answer from the server */
+  char *end;
+  int timeout = strtol(argv[1], &end, 10);
+  wait_answer(timeout);
+
   return 0;
 }
 
 void create_fifo_ans()
 {
   pid_t mypid = getpid();
-
   char fifo_ans[MAX_FIFO_LENGTH];
   sprintf(fifo_ans, "ans%ld", mypid);
 
@@ -53,7 +59,7 @@ struct request parse_args(char *arglist[])
 {
   struct request req;
   char *end;
-  req.timeout = strtol(arglist[1], &end, 10);
+  req.pid = getpid();
   req.num_wanted_seats = strtol(arglist[2], &end, 10);
 
   // Initializing struct pref_seats_list
@@ -64,11 +70,11 @@ struct request parse_args(char *arglist[])
   // First n elements are seat numbers, the rest are -1
   // MAX_CLI_SEATS - n = number of "unassigned" seats (-1)
   int i = 0;
-  char *p = strtok(arglist[3], " ");
-  while (p != NULL)
+  char *token = strtok(arglist[3], " ");
+  while (token != NULL)
   {
-    req.pref_seat_list[i++] = strtol(p, &end, 10);
-    p = strtok(NULL, " ");
+    req.pref_seat_list[i++] = strtol(token, &end, 10);
+    token = strtok(NULL, " ");
   }
 
   return req;
@@ -76,16 +82,46 @@ struct request parse_args(char *arglist[])
 
 void send_request(struct request req)
 {
-  // Attempting to open the fifo requests
+  // Attempting to open the fifo request
   int fdreq;
+  int timespan = 0;
   do
   {
+    if (timespan == REQUEST_TIMEOUT)
+    {
+      fprintf(stderr, "FIFO request not open. Try again later.\n");
+      return;
+    }
     fdreq = open("requests", O_WRONLY);
     if (fdreq == -1)
       sleep(1);
+    timespan++;
   } while (fdreq == -1);
-  // Sending struct request to fifo requests
+
+  // Sending struct req to fifo request
   write(fdreq, &req, 101 * sizeof(int));
 
   close(fdreq);
+}
+
+void wait_answer(int timeout)
+{
+  pid_t mypid = getpid();
+  char fifo_ans[MAX_FIFO_LENGTH];
+  sprintf(fifo_ans, "ans%ld", mypid);
+
+  int fd_ans;
+  if ((fd_ans = open(fifo_ans, O_RDONLY)) == -1)
+  {
+    char errorlog[50];
+    fprintf(stderr, "Unable to open FIFO %s", fifo_ans);
+    return;
+  }
+
+  printf("FIFO %s opened for reading\n", fifo_ans);
+
+  int n; char str[100];
+  n = read(fd_ans, str, 100);
+  if (n > 0)
+    printf("%s has arrived\n", str);
 }
