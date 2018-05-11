@@ -10,6 +10,7 @@
 
 void create_fifo_requests();
 void get_client_requests();
+void validate_request();
 
 int main(int argc, char *argv[])
 {
@@ -55,19 +56,18 @@ void get_client_requests(int open_time)
   {
     current_time = clock();
 
-    /*
-    char str[100];
-    int n = read(fd_req, str, 100);
-    if (n > 0) printf("request from client %s", str);
-    */
     struct request req;
     int n = read(fd_req, &req, sizeof(req));
-    if (n > 0) printf("request from client %d\n", req.num_wanted_seats);
-    
+    if (n > 0) validate_request(req);
     
     sleep(1);
   }
   printf("Time elapsed.");
+}
+
+void validate_request(struct request req) {
+  write(STDOUT_FILENO, &(req.num_wanted_seats), sizeof(int));
+  //printf("%d", req.num_wanted_seats);
 }
 
 void launch_ticket_offices_threads(int num_ticket_offices)

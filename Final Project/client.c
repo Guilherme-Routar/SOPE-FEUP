@@ -103,7 +103,6 @@ void send_request(struct request req)
 
   // Sending struct req to fifo requests
   write(fdreq, &req, sizeof(req));
-  //write(fdreq, "msg sent from client to fifo req\n", 34*sizeof(char));
 
   close(fdreq);
 }
