@@ -45,7 +45,7 @@ void create_fifo_ans()
 {
   pid_t mypid = getpid();
   char fifo_ans[MAX_FIFO_LENGTH];
-  sprintf(fifo_ans, "ans%ld", mypid);
+  sprintf(fifo_ans, "ans%ld", (long) mypid);
 
   if (mkfifo("testfifo", 0660) < 0)
     if (errno == EEXIST)
@@ -118,7 +118,7 @@ void wait_answer(int timeout)
 
   pid_t mypid = getpid();
   char fifo_ans[MAX_FIFO_LENGTH];
-  sprintf(fifo_ans, "ans%ld", mypid);
+  sprintf(fifo_ans, "ans%ld", (long) mypid);
 
   int fd_ans;
 
