@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#include "request.h"
+
 void create_fifo_requests();
 void get_client_requests();
 
@@ -53,9 +55,16 @@ void get_client_requests(int open_time)
   {
     current_time = clock();
 
+    /*
     char str[100];
     int n = read(fd_req, str, 100);
-    if (n > 0) printf("message = %s", str);
+    if (n > 0) printf("request from client %s", str);
+    */
+    struct request req;
+    int n = read(fd_req, &req, sizeof(req));
+    if (n > 0) printf("request from client %d\n", req.num_wanted_seats);
+    
+    
     sleep(1);
   }
   printf("Time elapsed.");
