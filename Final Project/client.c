@@ -28,15 +28,16 @@ int main(int argc, char *argv[])
   }
 
   /* Creating answers fifo */
-  create_fifo_ans();
+  //create_fifo_ans();
 
   /* Sending server a request through FIFO requests */
   send_request(parse_args(argv));
 
   /* Waiting for an answer from the server */
+  /*
   char *end;
   int timeout = strtol(argv[1], &end, 10);
-  wait_answer(timeout);
+  wait_answer(timeout); */
 
   return 0;
 }
@@ -47,7 +48,7 @@ void create_fifo_ans()
   char fifo_ans[MAX_FIFO_LENGTH];
   sprintf(fifo_ans, "ans%ld", (long) mypid);
 
-  if (mkfifo("testfifo", 0660) < 0)
+  if (mkfifo(fifo_ans, 0660) < 0)
     if (errno == EEXIST)
       printf("FIFO already created for the client with PID = %d\n", mypid);
     else
@@ -75,13 +76,7 @@ struct request parse_args(char *arglist[])
   int seatnumber;
   while (token != NULL)
   {
-    seatnumber = strtol(token, &end, 10);
-    if (seatnumber > MAX_ROOM_SEATS)
-    {
-      fprintf(stderr, "Unexistent seat number");
-      exit(0);
-    }
-    req.pref_seat_list[i++] = seatnumber;
+    req.pref_seat_list[i++] = strtol(token, &end, 10);
     token = strtok(NULL, " ");
   }
 
@@ -106,8 +101,9 @@ void send_request(struct request req)
     timespan++;
   } while (fdreq == -1);
 
-  // Sending struct req to fifo request
-  write(fdreq, &req, 101 * sizeof(int));
+  // Sending struct req to fifo requests
+  //write(fdreq, &req, 101 * sizeof(int));
+  write(fdreq, "msg sent from client to fifo req\n", 34*sizeof(char));
 
   close(fdreq);
 }
@@ -122,7 +118,7 @@ void wait_answer(int timeout)
 
   int fd_ans;
 
-  if ((fd_ans = open("testfifo", O_RDONLY, O_NONBLOCK)) == -1)
+  if ((fd_ans = open(fifo_ans, O_RDONLY, O_NONBLOCK)) == -1)
   {
     fprintf(stderr, "Unable to open FIFO %s", fifo_ans);
     return;
