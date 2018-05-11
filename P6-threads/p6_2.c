@@ -17,7 +17,7 @@ void *thrfunc(void *arg)
         counter++;
     }
     
-    return (void *) counter;
+    return (void *) counter; // DO NOT RETURN LOCAL VARIABLES
 }
 
 int main()
