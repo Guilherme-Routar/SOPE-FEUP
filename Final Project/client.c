@@ -5,6 +5,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "macros.h"
 #include "request.h"
@@ -15,7 +16,7 @@
 void create_fifo_ans();
 struct request parse_args(char *arglist[]);
 void send_request(struct request req);
-void wait_answer();
+void wait_answer(int timeout);
 
 int main(int argc, char *argv[])
 {
@@ -27,12 +28,12 @@ int main(int argc, char *argv[])
   }
 
   /* Creating answers fifo */
-  //create_fifo_ans();
+  create_fifo_ans();
 
   /* Sending server a request through FIFO requests */
   send_request(parse_args(argv));
 
-  /* Wait for an answer from the server */
+  /* Waiting for an answer from the server */
   char *end;
   int timeout = strtol(argv[1], &end, 10);
   wait_answer(timeout);
@@ -46,7 +47,7 @@ void create_fifo_ans()
   char fifo_ans[MAX_FIFO_LENGTH];
   sprintf(fifo_ans, "ans%ld", mypid);
 
-  if (mkfifo(fifo_ans, 0660) < 0)
+  if (mkfifo("testfifo", 0660) < 0)
     if (errno == EEXIST)
       printf("FIFO already created for the client with PID = %d\n", mypid);
     else
@@ -75,7 +76,7 @@ struct request parse_args(char *arglist[])
   while (token != NULL)
   {
     seatnumber = strtol(token, &end, 10);
-    if (seatnumber > MAX_ROOM_SEATS) 
+    if (seatnumber > MAX_ROOM_SEATS)
     {
       fprintf(stderr, "Unexistent seat number");
       exit(0);
@@ -113,22 +114,38 @@ void send_request(struct request req)
 
 void wait_answer(int timeout)
 {
+  printf("Waiting for an answer..\n");
+
   pid_t mypid = getpid();
   char fifo_ans[MAX_FIFO_LENGTH];
   sprintf(fifo_ans, "ans%ld", mypid);
 
   int fd_ans;
-  if ((fd_ans = open(fifo_ans, O_RDONLY)) == -1)
+
+  if ((fd_ans = open("testfifo", O_RDONLY, O_NONBLOCK)) == -1)
   {
-    char errorlog[50];
     fprintf(stderr, "Unable to open FIFO %s", fifo_ans);
     return;
   }
 
   printf("FIFO %s opened for reading\n", fifo_ans);
 
-  int n; char str[100];
-  n = read(fd_ans, str, 100);
-  if (n > 0)
-    printf("%s has arrived\n", str);
+  clock_t initial_time = clock();
+  clock_t current_time = initial_time;
+  while ((current_time - initial_time) < (timeout * 100))
+  {
+    printf("tm = %d", timeout*100);
+    current_time = clock();
+
+    int n;
+    char str[4];
+    n = read(fd_ans, str, 100);
+    if (n > 0)
+    {
+      printf("message = %s", str);
+      return;
+    } 
+    sleep(1);
+  }
+  printf("Time elapsed.");
 }

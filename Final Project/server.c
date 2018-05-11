@@ -9,16 +9,17 @@
 int main(int argc, char *argv[])
 {
 
-    int fd;
+    // Attempting to open the fifo request
+    int fdreq;
     do
     {
-        fd = open("requests", O_WRONLY);
-        if (fd == -1)
+        fdreq = open("testfifo", O_WRONLY);
+        if (fdreq == -1)
             sleep(1);
-    } while (fd == -1);
+    } while (fdreq == -1);
 
     // Sending struct req to fifo request
-    write(fd, &req, 101 * sizeof(int));
+    //write(fdreq, "test", 4 * sizeof(char));
 
-    close(fd);
+    close(fdreq);
 }
