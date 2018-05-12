@@ -24,10 +24,16 @@ int main(int argc, char *argv[])
   /* Creating fifo requests */
   create_fifo_requests();
 
+  int num_room_seats = argv[1];
+
   /* Waiting for client requests */
   char *end;
   int open_time = strtol(argv[3], &end, 10);
   get_client_requests(open_time);
+
+  /* Launch ticket offices threads */
+  int num_ticket_offices = strtol(argv[2], &end, 10);
+  launch_ticket_offices_threads();
 }
 
 void create_fifo_requests()
@@ -59,8 +65,7 @@ void get_client_requests(int open_time)
     struct request req;
     int n = read(fd_req, &req, sizeof(req));
     if (n > 0)
-      //printf("%d\n", req.pref_seats_size);
-      validate_request(req, MAX_ROOM_SEATS);
+      printf("%d", validate_request(req, MAX_ROOM_SEATS));
 
     sleep(1);
   }
@@ -83,19 +88,22 @@ int validate_request(struct request req, int num_room_seats)
   /* Validating number of each prefered seat */
   for (int i = 0; i < req.pref_seats_size; i++)
   {
-    printf("ar = %d\n", req.pref_seat_list[i]);
-  }
-  /*
-  for (int i = 0; i < req.pref_seats_size; i++)
-  {
     if (!(req.pref_seat_list[i] >= 1 &&
           req.pref_seat_list[i] <= num_room_seats))
       return INVALID_SEAT_NUMBER; 
-  }*/
+  }
 
   return 1;
 }
 
 void launch_ticket_offices_threads(int num_ticket_offices)
 {
+  for (int i = 0; i < num_ticket_offices; i++) {
+    pthread_t tid;
+    pthread_create(&tid, NULL, init_ticket_office, NULL);
+  }
+}
+
+void *init_ticket_office(void *arg) {
+  
 }
