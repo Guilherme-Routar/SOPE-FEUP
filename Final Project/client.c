@@ -14,8 +14,8 @@
 #define REQUEST_TIMEOUT 5 // Number of seconds to wait for fifo request to open
 
 void create_fifo_ans();
-struct request init_request(char *arglist[]);
-void send_request(struct request req);
+Request init_request(char *arglist[]);
+void send_request(Request req);
 void wait_answer(int timeout);
 
 int main(int argc, char *argv[])
@@ -68,12 +68,12 @@ int count_seats_list(char *seats_list)
   return size;
 }
 
-struct request init_request(char *arglist[])
+Request init_request(char *arglist[])
 {
   // Getting the size of pref_seat_list so we can initialize and allocate the array
   int pref_seats_size = count_seats_list(arglist[3]);
 
-  struct request req;
+  Request req;
 
   // Initializing struct pref_seats_list
   for (int i = 0; i < MAX_CLI_SEATS; i++)
@@ -101,7 +101,7 @@ struct request init_request(char *arglist[])
   return req;
 }
 
-void send_request(struct request req)
+void send_request(Request req)
 {
   // Attempting to open the fifo request
   int fdreq;

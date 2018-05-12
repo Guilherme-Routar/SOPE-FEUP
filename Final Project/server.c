@@ -10,7 +10,7 @@
 
 void create_fifo_requests();
 void get_client_requests(int open_time);
-int validate_request(struct request req, int num_room_seats);
+int validate_request(Request req, int num_room_seats);
 
 int main(int argc, char *argv[])
 {
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
   /* Launch ticket offices threads */
   int num_ticket_offices = strtol(argv[2], &end, 10);
-  launch_ticket_offices_threads();
+  //launch_ticket_offices_threads(num_ticket_offices);
 }
 
 void create_fifo_requests()
@@ -62,7 +62,7 @@ void get_client_requests(int open_time)
   {
     current_time = clock();
 
-    struct request req;
+    Request req;
     int n = read(fd_req, &req, sizeof(req));
     if (n > 0)
       printf("%d", validate_request(req, MAX_ROOM_SEATS));
@@ -73,7 +73,7 @@ void get_client_requests(int open_time)
   printf("Time elapsed.");
 }
 
-int validate_request(struct request req, int num_room_seats)
+int validate_request(Request req, int num_room_seats)
 {
   /* Validating number of wanted seats */
   if (!(req.num_wanted_seats >= 1 &&
@@ -93,17 +93,37 @@ int validate_request(struct request req, int num_room_seats)
       return INVALID_SEAT_NUMBER; 
   }
 
+  for (int i = 0; i < req.pref_seats_size; i++) {
+    printf("n = %d\n", req.pref_seat_list[i]);
+  }
+
   return 1;
 }
 
+/*
+
 void launch_ticket_offices_threads(int num_ticket_offices)
 {
+  pthread_t threads[num_ticket_offices];
   for (int i = 0; i < num_ticket_offices; i++) {
-    pthread_t tid;
-    pthread_create(&tid, NULL, init_ticket_office, NULL);
+    pthread_create(&threads[i], NULL, ticket_office_thrfn, NULL);
   }
 }
 
-void *init_ticket_office(void *arg) {
-  
+void *ticket_office_thrfn(void *arg) {
+
 }
+
+int isSeatFree() {
+
+}
+
+void bookSeat() {
+
+}
+
+void freeSeat() {
+
+}
+
+*/

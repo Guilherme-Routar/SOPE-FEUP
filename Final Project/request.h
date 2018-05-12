@@ -3,11 +3,11 @@
 
 #include "macros.h"
 
-struct request {
+typedef struct Requests {
   pid_t pid;
   int num_wanted_seats;
   int pref_seats_size;
   int pref_seat_list[MAX_CLI_SEATS];
-};
+} Request;
 
 #endif 
