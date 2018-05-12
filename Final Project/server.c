@@ -9,8 +9,8 @@
 #include "request.h"
 
 void create_fifo_requests();
-void get_client_requests();
-void validate_request();
+void get_client_requests(int open_time);
+int validate_request(struct request req, int num_room_seats);
 
 int main(int argc, char *argv[])
 {
@@ -59,29 +59,39 @@ void get_client_requests(int open_time)
     struct request req;
     int n = read(fd_req, &req, sizeof(req));
     if (n > 0)
-      validate_request(req);
+      //printf("%d\n", req.pref_seats_size);
+      validate_request(req, MAX_ROOM_SEATS);
 
     sleep(1);
   }
+
   printf("Time elapsed.");
 }
 
-void validate_request(struct request req, int num_room_seats)
+int validate_request(struct request req, int num_room_seats)
 {
   /* Validating number of wanted seats */
-  if (!(1 <= req.num_wanted_seats <= MAX_CLI_SEATS))
-    return -1;
-  
+  if (!(req.num_wanted_seats >= 1 &&
+        req.num_wanted_seats <= MAX_CLI_SEATS))
+    return OVERFLOW_NUM_WANTED_SEATS;
+
   /* Validating size of prefered seats list */
-  if (!(req.num_wanted_seats <= req.pref_seats_size <= MAX_CLI_SEATS))
-    return -1;
+  if (!(req.pref_seats_size >= req.num_wanted_seats &&
+        req.pref_seats_size <= MAX_CLI_SEATS))
+    return INVALID_NUMBER_PREF_SEATS;
 
   /* Validating number of each prefered seat */
   for (int i = 0; i < req.pref_seats_size; i++)
   {
-    if (!(1 <= req.pref_seat_list[i] <= MAX_ROOM_SEATS))
-      return -1;
+    printf("ar = %d\n", req.pref_seat_list[i]);
   }
+  /*
+  for (int i = 0; i < req.pref_seats_size; i++)
+  {
+    if (!(req.pref_seat_list[i] >= 1 &&
+          req.pref_seat_list[i] <= num_room_seats))
+      return INVALID_SEAT_NUMBER; 
+  }*/
 
   return 1;
 }

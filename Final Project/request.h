@@ -6,8 +6,8 @@
 struct request {
   pid_t pid;
   int num_wanted_seats;
-  int *pref_seat_list;
   int pref_seats_size;
+  int pref_seat_list[MAX_CLI_SEATS];
 };
 
 #endif 

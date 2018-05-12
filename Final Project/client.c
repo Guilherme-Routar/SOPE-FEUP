@@ -70,24 +70,26 @@ int count_seats_list(char *seats_list)
 
 struct request init_request(char *arglist[])
 {
+  // Getting the size of pref_seat_list so we can initialize and allocate the array
+  int pref_seats_size = count_seats_list(arglist[3]);
+
   struct request req;
-  char *end;
+
+  // Initializing struct pref_seats_list
+  for (int i = 0; i < MAX_CLI_SEATS; i++)
+    req.pref_seat_list[i] = -1;
+
+  // Getting client's PID
   req.pid = getpid();
+
+  // Getting client's number of wanted seats
+  char *end;
   req.num_wanted_seats = strtol(arglist[2], &end, 10);
 
-  // Initializing list of prefered seats
-  int pref_seats_size = count_seats_list(arglist[3]);
-  req.pref_seat_list = malloc(pref_seats_size * sizeof(int));
-  if (req.pref_seat_list == NULL)
-  {
-    fprintf(stderr, "Fatal: failed to allocate memory for seats list");
-    exit(0);
-  }
-
-  // Storing size of pref_seat_list
+  // Assigning size of the struct's pref_seat_list array
   req.pref_seats_size = pref_seats_size;
 
-  // Assigning seats arguments list to struct's array
+  // Assigning list of seats to struct's pref_seat_list array
   int i = 0;
   char *token = strtok(arglist[3], " ");
   while (token != NULL)
