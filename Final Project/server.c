@@ -68,17 +68,22 @@ void get_client_requests(int open_time)
 
 void validate_request(struct request req, int num_room_seats)
 {
-  /* Validate number of wanted seats */
+  /* Validating number of wanted seats */
   if (!(1 <= req.num_wanted_seats <= MAX_CLI_SEATS))
     return -1;
+  
+  /* Validating size of prefered seats list */
+  if (!(req.num_wanted_seats <= req.pref_seats_size <= MAX_CLI_SEATS))
+    return -1;
 
-  /* Check if pref_seat_list is at least num_wanted_seats */
-  for (int i = 0; i < MAX_CLI_SEATS; i++)
+  /* Validating number of each prefered seat */
+  for (int i = 0; i < req.pref_seats_size; i++)
   {
-    int seat = req.pref_seat_list[i];
-    if (seat != -1 && 1 <= seat <= MAX_ROOM_SEATS)
-      return 1;
+    if (!(1 <= req.pref_seat_list[i] <= MAX_ROOM_SEATS))
+      return -1;
   }
+
+  return 1;
 }
 
 void launch_ticket_offices_threads(int num_ticket_offices)
