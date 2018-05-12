@@ -58,16 +58,27 @@ void get_client_requests(int open_time)
 
     struct request req;
     int n = read(fd_req, &req, sizeof(req));
-    if (n > 0) validate_request(req);
-    
+    if (n > 0)
+      validate_request(req);
+
     sleep(1);
   }
   printf("Time elapsed.");
 }
 
-void validate_request(struct request req) {
-  write(STDOUT_FILENO, &(req.num_wanted_seats), sizeof(int));
-  //printf("%d", req.num_wanted_seats);
+void validate_request(struct request req, int num_room_seats)
+{
+  /* Validate number of wanted seats */
+  if (!(1 <= req.num_wanted_seats <= MAX_CLI_SEATS))
+    return -1;
+
+  /* Check if pref_seat_list is at least num_wanted_seats */
+  for (int i = 0; i < MAX_CLI_SEATS; i++)
+  {
+    int seat = req.pref_seat_list[i];
+    if (seat != -1 && 1 <= seat <= MAX_ROOM_SEATS)
+      return 1;
+  }
 }
 
 void launch_ticket_offices_threads(int num_ticket_offices)

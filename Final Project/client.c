@@ -14,7 +14,7 @@
 #define REQUEST_TIMEOUT 5 // Number of seconds to wait for fifo request to open
 
 void create_fifo_ans();
-struct request parse_args(char *arglist[]);
+struct request init_request(char *arglist[]);
 void send_request(struct request req);
 void wait_answer(int timeout);
 
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   //create_fifo_ans();
 
   /* Sending server a request through FIFO requests */
-  send_request(parse_args(argv));
+  send_request(init_request(argv));
 
   /* Waiting for an answer from the server */
   /*
@@ -46,7 +46,7 @@ void create_fifo_ans()
 {
   pid_t mypid = getpid();
   char fifo_ans[MAX_FIFO_LENGTH];
-  sprintf(fifo_ans, "ans%ld", (long) mypid);
+  sprintf(fifo_ans, "ans%ld", (long)mypid);
 
   if (mkfifo(fifo_ans, 0660) < 0)
     if (errno == EEXIST)
@@ -57,23 +57,39 @@ void create_fifo_ans()
     printf("FIFO %s sucessfully created\n", fifo_ans);
 }
 
-struct request parse_args(char *arglist[])
+int count_seats_list(char *seats_list)
+{
+  int size = 1;
+  while ((seats_list = strchr(seats_list, ' ')) != NULL)
+  {
+    size++;
+    seats_list++;
+  }
+  return size;
+}
+
+struct request init_request(char *arglist[])
 {
   struct request req;
   char *end;
   req.pid = getpid();
   req.num_wanted_seats = strtol(arglist[2], &end, 10);
 
-  // Initializing struct pref_seats_list
-  for (int i = 0; i < MAX_CLI_SEATS; i++)
-    req.pref_seat_list[i] = -1;
+  // Initializing list of prefered seats
+  int pref_seats_size = count_seats_list(arglist[3]);
+  req.pref_seat_list = malloc(pref_seats_size * sizeof(int));
+  if (req.pref_seat_list == NULL)
+  {
+    fprintf(stderr, "Fatal: failed to allocate memory for seats list");
+    exit(0);
+  }
+
+  // Storing size of pref_seat_list
+  req.pref_seats_size = pref_seats_size;
 
   // Assigning seats arguments list to struct's array
-  // First n elements are seat numbers, the rest are -1
-  // MAX_CLI_SEATS - n = number of "unassigned" seats (-1)
   int i = 0;
   char *token = strtok(arglist[3], " ");
-  int seatnumber;
   while (token != NULL)
   {
     req.pref_seat_list[i++] = strtol(token, &end, 10);
@@ -113,7 +129,7 @@ void wait_answer(int timeout)
 
   pid_t mypid = getpid();
   char fifo_ans[MAX_FIFO_LENGTH];
-  sprintf(fifo_ans, "ans%ld", (long) mypid);
+  sprintf(fifo_ans, "ans%ld", (long)mypid);
 
   int fd_ans;
 
@@ -129,7 +145,7 @@ void wait_answer(int timeout)
   clock_t current_time = initial_time;
   while ((current_time - initial_time) < (timeout * 100))
   {
-    printf("tm = %d", timeout*100);
+    printf("tm = %d", timeout * 100);
     current_time = clock();
 
     int n;
@@ -139,7 +155,7 @@ void wait_answer(int timeout)
     {
       printf("message = %s", str);
       return;
-    } 
+    }
     sleep(1);
   }
   printf("Time elapsed.");
