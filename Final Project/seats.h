@@ -6,6 +6,7 @@
 typedef struct Seats {
     int number;
     bool free;
+    pid_t client_id;
 } Seat;
 
 #endif

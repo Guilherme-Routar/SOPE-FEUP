@@ -11,11 +11,20 @@
 
 void create_fifo_requests();
 void get_client_requests(int open_time);
-int validate_request(Request req, int num_room_seats);
-void *safe_malloc(void *ptr, int nbytes);
-void init_seats_list(int num_room_seats);
+int validate_request(Request req);
 
-Seat *seats;
+void *safe_malloc(void *ptr, int nbytes);
+Seat *init_seats_list(Seat *seats);
+
+//void launch_ticket_offices_threads(int num_ticket_offices);
+//void *ticket_office_thrfn(void *arg);
+
+int isSeatFree(Seat *seats, int seatNum);
+void bookSeat(Seat *seats, int seatNum, int clientId);
+void freeSeat(Seat *seats, int seatNum);
+
+// Global variables
+int num_room_seats;
 
 int main(int argc, char *argv[])
 {
@@ -26,12 +35,16 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
+  Seat *seats;
+
   /* Creating fifo requests */
   //create_fifo_requests();
 
   char *end;
-  int num_room_seats = strtol(argv[1], &end, 10);
-  init_seats_list(num_room_seats);
+  num_room_seats = strtol(argv[1], &end, 10);
+  seats = init_seats_list(seats);
+
+  isSeatFree(seats, 10);
 
   /* Waiting for client requests */
   int open_time = strtol(argv[3], &end, 10);
@@ -53,27 +66,32 @@ void create_fifo_requests()
     printf("FIFO requests sucessfully created\n");
 }
 
-void *safe_malloc(void * ptr, int nbytes)
+void *safe_malloc(void *ptr, int nbytes)
 {
   ptr = malloc(nbytes);
-  if (!ptr) {
+  if (!ptr)
+  {
     fprintf(stderr, "Failed to allocate %d bytes of memory\n", nbytes);
     return BAD_ALLOC;
   }
   return ptr;
 }
 
-void init_seats_list(int num_room_seats)
+Seat *init_seats_list(Seat *seats)
 {
   int nbytes = num_room_seats * sizeof(Seat);
   seats = safe_malloc(seats, nbytes);
 
   Seat s;
-  for (int i = 0; i < num_room_seats; i++) {
+  for (int i = 0; i < num_room_seats; i++)
+  {
     s.number = i + 1;
     s.free = true;
+    s.client_id = NULL;
     seats[i] = s;
   }
+
+  return seats;
 }
 
 void get_client_requests(int open_time)
@@ -94,7 +112,7 @@ void get_client_requests(int open_time)
     Request req;
     int n = read(fd_req, &req, sizeof(req));
     if (n > 0)
-      printf("%d", validate_request(req, MAX_ROOM_SEATS));
+      printf("%d", validate_request(req));
 
     sleep(1);
   }
@@ -102,7 +120,7 @@ void get_client_requests(int open_time)
   printf("Time elapsed.");
 }
 
-int validate_request(Request req, int num_room_seats)
+int validate_request(Request req)
 {
   /* Validating number of wanted seats */
   if (!(req.num_wanted_seats >= 1 &&
@@ -130,30 +148,38 @@ int validate_request(Request req, int num_room_seats)
   return 1;
 }
 
-/*
-
-void launch_ticket_offices_threads(int num_ticket_offices)
+/*void launch_ticket_offices_threads(int num_ticket_offices)
 {
   pthread_t threads[num_ticket_offices];
-  for (int i = 0; i < num_ticket_offices; i++) {
+  for (int i = 0; i < num_ticket_offices; i++)
+  {
     pthread_create(&threads[i], NULL, ticket_office_thrfn, NULL);
   }
 }
 
-void *ticket_office_thrfn(void *arg) {
+void *ticket_office_thrfn(void *arg)
+{
+} */
 
+// Test if seatNum is free
+int isSeatFree(Seat *seats, int seatNum)
+{
+  Seat s = seats[seatNum + 1];
+  if (s.free)
+    return SEAT_AVAILABLE;
+  return SEAT_UNAVAILABLE;
 }
 
-int isSeatFree() {
-
+void bookSeat(Seat *seats, int seatNum, int clientId)
+{
+  Seat s = seats[seatNum + 1];
+  s.free = false;
+  s.client_id = clientId;
 }
 
-void bookSeat() {
-
+void freeSeat(Seat *seats, int seatNum)
+{
+  Seat s = seats[seatNum + 1];
+  s.free = true;
+  s.client_id = NULL;
 }
-
-void freeSeat() {
-
-}
-
-*/
