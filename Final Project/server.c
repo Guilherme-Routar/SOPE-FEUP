@@ -5,6 +5,9 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <time.h>
 
 #include "request.h"
 #include "seats.h"
@@ -16,8 +19,8 @@ int validate_request(Request req);
 void *safe_malloc(void *ptr, int nbytes);
 Seat *init_seats_list(Seat *seats);
 
-//void launch_ticket_offices_threads(int num_ticket_offices);
-//void *ticket_office_thrfn(void *arg);
+void launch_ticket_offices_threads(int num_ticket_offices);
+void *ticket_office_handler(void *arg);
 
 int isSeatFree(Seat *seats, int seatNum);
 void bookSeat(Seat *seats, int seatNum, int clientId);
@@ -25,6 +28,8 @@ void freeSeat(Seat *seats, int seatNum);
 
 // Global variables
 int num_room_seats;
+Request request;   // 1u buffer
+sem_t empty, full; // global semaphores
 
 int main(int argc, char *argv[])
 {
@@ -38,19 +43,22 @@ int main(int argc, char *argv[])
   Seat *seats;
 
   /* Creating fifo requests */
-  //create_fifo_requests();
+  create_fifo_requests();
 
   char *end;
   num_room_seats = strtol(argv[1], &end, 10);
   seats = init_seats_list(seats);
 
-  /* Waiting for client requests */
-  int open_time = strtol(argv[3], &end, 10);
-  //get_client_requests(open_time);
+  sem_init(&empty, SHARED, 1);
+  sem_init(&full, SHARED, 0);
 
   /* Launch ticket offices threads */
   int num_ticket_offices = strtol(argv[2], &end, 10);
-  //launch_ticket_offices_threads(num_ticket_offices);
+  launch_ticket_offices_threads(num_ticket_offices);
+
+  /* Waiting for client requests */
+  int open_time = strtol(argv[3], &end, 10);
+  get_client_requests(open_time);
 }
 
 void create_fifo_requests()
@@ -78,24 +86,29 @@ void *safe_malloc(void *ptr, int nbytes)
 void get_client_requests(int open_time)
 {
   int fd_req;
-  if ((fd_req = open("requests", O_RDONLY, O_NONBLOCK)) == -1)
+  if ((fd_req = open("requests", O_RDONLY | O_NONBLOCK)) == -1)
   {
     fprintf(stderr, "Unable to open FIFO requests");
     return;
   }
 
-  clock_t initial_time = clock();
-  clock_t current_time = initial_time;
-  while ((current_time - initial_time) < (open_time * 100))
+  time_t initial_time = time(NULL);
+  time_t current_time = initial_time;
+  while ((current_time - initial_time) < open_time)
   {
-    current_time = clock();
-
     Request req;
     int n = read(fd_req, &req, sizeof(req));
     if (n > 0)
-      printf("%d", validate_request(req));
+    {
+      sem_wait(&empty);
+      request = req; // Global buffer full
+      sem_post(&full);
+      printf("req = %d\n", req.pid);
+      //printf("%d", validate_request(req));
+    }
 
-    sleep(1);
+    usleep(100000); // 100 ms
+    current_time = time(NULL);
   }
 
   printf("Time elapsed.");
@@ -121,28 +134,36 @@ int validate_request(Request req)
       return INVALID_SEAT_NUMBER;
   }
 
-  for (int i = 0; i < req.pref_seats_size; i++)
-  {
-    printf("n = %d\n", req.pref_seat_list[i]);
-  }
-
   return 1;
 }
 
-/*void launch_ticket_offices_threads(int num_ticket_offices)
+void launch_ticket_offices_threads(int num_ticket_offices)
 {
   pthread_t threads[num_ticket_offices];
   for (int i = 0; i < num_ticket_offices; i++)
   {
-    pthread_create(&threads[i], NULL, ticket_office_thrfn, NULL);
+    pthread_create(&threads[i], NULL, ticket_office_handler, NULL);
   }
 }
 
-void *ticket_office_thrfn(void *arg)
+void *ticket_office_handler(void *arg)
 {
-} */
+  Request myreq;
+  while (1)
+  {
+    sem_wait(&full);
+    myreq = request;
+    sem_post(&empty);
 
-Seat * init_seats_list(Seat *seats)
+    printf("return = %d\n", validate_request(myreq));
+
+    //handling
+    printf("client pid = %d\n", myreq.pid);
+    printf("tid = %d\n", pthread_self());
+  }
+}
+
+Seat *init_seats_list(Seat *seats)
 {
   int nbytes = num_room_seats * sizeof(Seat);
   seats = safe_malloc(seats, nbytes);

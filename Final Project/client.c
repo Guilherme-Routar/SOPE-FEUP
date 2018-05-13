@@ -28,16 +28,15 @@ int main(int argc, char *argv[])
   }
 
   /* Creating answers fifo */
-  //create_fifo_ans();
+  create_fifo_ans();
 
   /* Sending server a request through FIFO requests */
   send_request(init_request(argv));
 
   /* Waiting for an answer from the server */
-  /*
   char *end;
   int timeout = strtol(argv[1], &end, 10);
-  wait_answer(timeout); */
+  wait_answer(timeout); 
 
   return 0;
 }
@@ -111,11 +110,11 @@ void send_request(Request req)
     if (timespan == REQUEST_TIMEOUT)
     {
       fprintf(stderr, "FIFO request not open. Try again later.\n");
-      return;
+      exit(-1);
     }
-    fdreq = open("requests", O_WRONLY);
+    fdreq = open("requests", O_WRONLY | O_NONBLOCK);
     if (fdreq == -1)
-      sleep(1);
+      usleep(100000); // 100 ms
     timespan++;
   } while (fdreq == -1);
 
@@ -135,7 +134,7 @@ void wait_answer(int timeout)
 
   int fd_ans;
 
-  if ((fd_ans = open(fifo_ans, O_RDONLY, O_NONBLOCK)) == -1)
+  if ((fd_ans = open(fifo_ans, O_RDONLY | O_NONBLOCK)) == -1)
   {
     fprintf(stderr, "Unable to open FIFO %s", fifo_ans);
     return;
@@ -143,13 +142,10 @@ void wait_answer(int timeout)
 
   printf("FIFO %s opened for reading\n", fifo_ans);
 
-  clock_t initial_time = clock();
-  clock_t current_time = initial_time;
-  while ((current_time - initial_time) < (timeout * 100))
+  time_t initial_time = time(NULL);
+  time_t current_time = initial_time;
+  while ((current_time - initial_time) < timeout)
   {
-    printf("tm = %d", timeout * 100);
-    current_time = clock();
-
     int n;
     char str[4];
     n = read(fd_ans, str, 100);
@@ -158,7 +154,8 @@ void wait_answer(int timeout)
       printf("message = %s", str);
       return;
     }
-    sleep(1);
+    usleep(100000); // 100 ms
+    current_time = time(NULL);
   }
-  printf("Time elapsed.");
+  printf("Time's up.");
 }
