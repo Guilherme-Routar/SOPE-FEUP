@@ -7,10 +7,15 @@
 #include <fcntl.h>
 
 #include "request.h"
+#include "seats.h"
 
 void create_fifo_requests();
 void get_client_requests(int open_time);
 int validate_request(Request req, int num_room_seats);
+void *safe_malloc(void *ptr, int nbytes);
+void init_seats_list(int num_room_seats);
+
+Seat *seats;
 
 int main(int argc, char *argv[])
 {
@@ -22,14 +27,15 @@ int main(int argc, char *argv[])
   }
 
   /* Creating fifo requests */
-  create_fifo_requests();
+  //create_fifo_requests();
 
-  int num_room_seats = argv[1];
+  char *end;
+  int num_room_seats = strtol(argv[1], &end, 10);
+  init_seats_list(num_room_seats);
 
   /* Waiting for client requests */
-  char *end;
   int open_time = strtol(argv[3], &end, 10);
-  get_client_requests(open_time);
+  //get_client_requests(open_time);
 
   /* Launch ticket offices threads */
   int num_ticket_offices = strtol(argv[2], &end, 10);
@@ -45,6 +51,29 @@ void create_fifo_requests()
       printf("Can't create FIFO requests\n");
   else
     printf("FIFO requests sucessfully created\n");
+}
+
+void *safe_malloc(void * ptr, int nbytes)
+{
+  ptr = malloc(nbytes);
+  if (!ptr) {
+    fprintf(stderr, "Failed to allocate %d bytes of memory\n", nbytes);
+    return BAD_ALLOC;
+  }
+  return ptr;
+}
+
+void init_seats_list(int num_room_seats)
+{
+  int nbytes = num_room_seats * sizeof(Seat);
+  seats = safe_malloc(seats, nbytes);
+
+  Seat s;
+  for (int i = 0; i < num_room_seats; i++) {
+    s.number = i + 1;
+    s.free = true;
+    seats[i] = s;
+  }
 }
 
 void get_client_requests(int open_time)
@@ -90,10 +119,11 @@ int validate_request(Request req, int num_room_seats)
   {
     if (!(req.pref_seat_list[i] >= 1 &&
           req.pref_seat_list[i] <= num_room_seats))
-      return INVALID_SEAT_NUMBER; 
+      return INVALID_SEAT_NUMBER;
   }
 
-  for (int i = 0; i < req.pref_seats_size; i++) {
+  for (int i = 0; i < req.pref_seats_size; i++)
+  {
     printf("n = %d\n", req.pref_seat_list[i]);
   }
 

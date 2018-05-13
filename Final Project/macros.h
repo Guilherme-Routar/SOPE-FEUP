@@ -16,4 +16,7 @@
 #define UNAVAILABLE_SEATS -5
 #define FULL_ROOM -6
 
+/* OTHER ERRORS */
+#define BAD_ALLOC NULL
+
 #endif 
