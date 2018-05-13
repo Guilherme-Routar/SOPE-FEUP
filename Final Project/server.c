@@ -44,8 +44,6 @@ int main(int argc, char *argv[])
   num_room_seats = strtol(argv[1], &end, 10);
   seats = init_seats_list(seats);
 
-  isSeatFree(seats, 10);
-
   /* Waiting for client requests */
   int open_time = strtol(argv[3], &end, 10);
   //get_client_requests(open_time);
@@ -75,23 +73,6 @@ void *safe_malloc(void *ptr, int nbytes)
     return BAD_ALLOC;
   }
   return ptr;
-}
-
-Seat *init_seats_list(Seat *seats)
-{
-  int nbytes = num_room_seats * sizeof(Seat);
-  seats = safe_malloc(seats, nbytes);
-
-  Seat s;
-  for (int i = 0; i < num_room_seats; i++)
-  {
-    s.number = i + 1;
-    s.free = true;
-    s.client_id = NULL;
-    seats[i] = s;
-  }
-
-  return seats;
 }
 
 void get_client_requests(int open_time)
@@ -161,25 +142,46 @@ void *ticket_office_thrfn(void *arg)
 {
 } */
 
-// Test if seatNum is free
+Seat * init_seats_list(Seat *seats)
+{
+  int nbytes = num_room_seats * sizeof(Seat);
+  seats = safe_malloc(seats, nbytes);
+
+  Seat s;
+  for (int i = 0; i < num_room_seats; i++)
+  {
+    s.number = i + 1;
+    s.available = SEAT_AVAILABLE;
+    s.client_id = -1;
+    seats[i] = s;
+  }
+
+  return seats;
+}
+
+// Testing if seat seatNum is free
 int isSeatFree(Seat *seats, int seatNum)
 {
-  Seat s = seats[seatNum + 1];
-  if (s.free)
+  Seat s = seats[seatNum - 1];
+  if (s.available == SEAT_AVAILABLE)
     return SEAT_AVAILABLE;
   return SEAT_UNAVAILABLE;
 }
 
+// Booking seat seatnum for client clientId
 void bookSeat(Seat *seats, int seatNum, int clientId)
 {
-  Seat s = seats[seatNum + 1];
-  s.free = false;
+  Seat s = seats[seatNum - 1];
+  s.available = SEAT_UNAVAILABLE;
   s.client_id = clientId;
+  seats[seatNum - 1] = s;
 }
 
+// Freeing seat seatNum (in case the final reservation couldn't be done)
 void freeSeat(Seat *seats, int seatNum)
 {
-  Seat s = seats[seatNum + 1];
-  s.free = true;
-  s.client_id = NULL;
+  Seat s = seats[seatNum - 1];
+  s.available = SEAT_AVAILABLE;
+  s.client_id = -1;
+  seats[seatNum - 1] = s;
 }
