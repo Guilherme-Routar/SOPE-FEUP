@@ -11,7 +11,7 @@
 #define WIDTH_SEAT 4
 
 /*  */
-#define SEAT_AVAILABLE 1
+#define SEAT_AVAILABLE 11
 #define SEAT_UNAVAILABLE 0
 
 /* REQUESTS MACROS */
@@ -22,6 +22,7 @@
 #define INVALID_PARAMETERS -4
 #define UNAVAILABLE_SEATS -5
 #define FULL_ROOM -6
+#define AVAILABLE_SEATS 12
 
 /* FILES */
 #define SLOG "slog.txt"
