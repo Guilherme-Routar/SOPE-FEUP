@@ -23,6 +23,12 @@
 #define UNAVAILABLE_SEATS -5
 #define FULL_ROOM -6
 
+/* FILES */
+#define SLOG "slog.txt"
+#define CLOG "clog.txt"
+#define SBOOK "sbook.txt"
+#define CBOOK "cbook.txt"
+
 /* OTHER ERRORS */
 #define BAD_ALLOC NULL
 

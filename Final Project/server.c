@@ -124,7 +124,7 @@ int validate_request(Request req)
     return INVALID_PARAMETERS;
 
   /* Validating number of wanted seats */
-  if (!(num_wanted_seatss >= 1 &&
+  if (!(num_wanted_seats >= 1 &&
         num_wanted_seats <= MAX_CLI_SEATS))
     return OVERFLOW_NUM_WANTED_SEATS;
 
@@ -157,6 +157,11 @@ void launch_ticket_offices_threads(int num_ticket_offices)
 void *ticket_office_handler(void *arg)
 {
   Request myreq;
+
+  FILE *fslog;
+  fslog = fopen(SLOG, "a");
+  fprintf(fslog, "%d-OPEN\n", pthread_self());
+
   while (1)
   {
     sem_wait(&full);
@@ -164,12 +169,42 @@ void *ticket_office_handler(void *arg)
     sem_post(&empty);
 
     //printf("return = %d\n", validate_request(myreq));
-    if (validate_request(myreq) == VALID_REQUEST) 
+    int request_status = validate_request(myreq);
+
+    switch (request_status)
+    {
+    case VALID_REQUEST:
+      // handle request
+      
+      // UNAVAILABLE_SEATS
+      //fprintf(fslog, "%d-%d-%d: list of seats - %s\n", pthread_self(), myreq.pid, myreq.num_wanted_seats, "NAV");
+      // FULL_ROOM
+      //fprintf(fslog, "%d-%d-%d: list of seats - %s\n", pthread_self(), myreq.pid, myreq.num_wanted_seats, "FUL");
+      break;
+    case INVALID_PARAMETERS:
+      fprintf(fslog, "%d-%d-%d: list of seats - %s\n", pthread_self(), myreq.pid, myreq.num_wanted_seats, "ERR");
+      break;
+    case OVERFLOW_NUM_WANTED_SEATS:
+      fprintf(fslog, "%d-%d-%d: list of seats - %s\n", pthread_self(), myreq.pid, myreq.num_wanted_seats, "MAX");
+      break;
+    case INVALID_NUMBER_PREF_SEATS:
+      fprintf(fslog, "%d-%d-%d: list of seats - %s\n", pthread_self(), myreq.pid, myreq.num_wanted_seats, "NST");
+      break;
+    case INVALID_SEAT_NUMBER:
+      fprintf(fslog, "%d-%d-%d: list of seats - %s\n", pthread_self(), myreq.pid, myreq.num_wanted_seats, "IID");
+      break;
+    
+    }
+
+    /*
+    if (request_status == VALID_REQUEST)
     {
       // seats = arg ...
       int booked_seats = 0;
-      for (int i = 0; i < myreq.pref_seats_size; i++) {
-        if (isSeatFree(seats, myreq.pref_seat_list[i]) == SEAT_AVAILABLE) {
+      for (int i = 0; i < myreq.pref_seats_size; i++)
+      {
+        if (isSeatFree(seats, myreq.pref_seat_list[i]) == SEAT_AVAILABLE)
+        {
           bookSeat(seats, myreq.pref_seat_list[i], myreq.pid);
           booked_seats++;
         }
@@ -180,16 +215,14 @@ void *ticket_office_handler(void *arg)
       {
         //freeseats
       }
-    }
-    else 
-    {
-      printf("Dropping invalid request. Grabbing another.\n");
-    }
+    } */
 
     //handling
     printf("client pid = %d\n", myreq.pid);
     printf("tid = %d\n", pthread_self());
   }
+
+  fprintf(fslog, "%d-CLOSED\n", pthread_self());
 }
 
 Seat *init_seats_list(Seat *seats)

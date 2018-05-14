@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
   /* Waiting for an answer from the server */
   char *end;
   int timeout = strtol(argv[1], &end, 10);
-  wait_answer(timeout); 
+  //wait_answer(timeout); 
 
   return 0;
 }
