@@ -111,7 +111,8 @@ void get_client_requests(int open_time)
     current_time = time(NULL);
   }
 
-  printf("Time elapsed.");
+  printf("Ticket offices closed.\n");
+  unlink("requests");
 }
 
 int validate_request(Request req)

@@ -11,7 +11,7 @@
 #include "request.h"
 
 #define MAX_FIFO_LENGTH 8 // Fifo's name max length
-#define REQUEST_TIMEOUT 5 // Number of seconds to wait for fifo request to open
+#define REQUEST_TIMEOUT 30 // Number of seconds to wait for fifo request to open
 
 void create_fifo_ans();
 Request init_request(char *arglist[]);
@@ -107,15 +107,17 @@ void send_request(Request req)
   int timespan = 0;
   do
   {
+    timespan++;
     if (timespan == REQUEST_TIMEOUT)
     {
       fprintf(stderr, "FIFO request not open. Try again later.\n");
       exit(-1);
     }
+
     fdreq = open("requests", O_WRONLY | O_NONBLOCK);
     if (fdreq == -1)
       usleep(100000); // 100 ms
-    timespan++;
+    
   } while (fdreq == -1);
 
   // Sending struct req to fifo requests
@@ -158,4 +160,5 @@ void wait_answer(int timeout)
     current_time = time(NULL);
   }
   printf("Time's up.");
+  unlink(fifo_ans);
 }
