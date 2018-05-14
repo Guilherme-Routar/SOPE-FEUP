@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
+#include <ctype.h>
 
 #include "request.h"
 #include "seats.h"
@@ -101,10 +102,9 @@ void get_client_requests(int open_time)
     if (n > 0)
     {
       sem_wait(&empty);
-      request = req; // Global buffer full
+      request = req;
       sem_post(&full);
       printf("req = %d\n", req.pid);
-      //printf("%d", validate_request(req));
     }
 
     usleep(100000); // 100 ms
@@ -117,25 +117,32 @@ void get_client_requests(int open_time)
 
 int validate_request(Request req)
 {
+  int num_wanted_seats = req.num_wanted_seats;
+  int pref_seats_size = req.pref_seats_size;
+
+  if (!isdigit(num_wanted_seats))
+    return INVALID_PARAMETERS;
+
   /* Validating number of wanted seats */
-  if (!(req.num_wanted_seats >= 1 &&
-        req.num_wanted_seats <= MAX_CLI_SEATS))
+  if (!(num_wanted_seatss >= 1 &&
+        num_wanted_seats <= MAX_CLI_SEATS))
     return OVERFLOW_NUM_WANTED_SEATS;
 
   /* Validating size of prefered seats list */
-  if (!(req.pref_seats_size >= req.num_wanted_seats &&
-        req.pref_seats_size <= MAX_CLI_SEATS))
+  if (!(pref_seats_size >= num_wanted_seats &&
+        pref_seats_size <= MAX_CLI_SEATS))
     return INVALID_NUMBER_PREF_SEATS;
 
   /* Validating number of each prefered seat */
   for (int i = 0; i < req.pref_seats_size; i++)
   {
-    if (!(req.pref_seat_list[i] >= 1 &&
+    if (!(isdigit(req.pref_seat_list[i]) &&
+          req.pref_seat_list[i] >= 1 &&
           req.pref_seat_list[i] <= num_room_seats))
       return INVALID_SEAT_NUMBER;
   }
 
-  return 1;
+  return VALID_REQUEST;
 }
 
 void launch_ticket_offices_threads(int num_ticket_offices)
@@ -156,7 +163,28 @@ void *ticket_office_handler(void *arg)
     myreq = request;
     sem_post(&empty);
 
-    printf("return = %d\n", validate_request(myreq));
+    //printf("return = %d\n", validate_request(myreq));
+    if (validate_request(myreq) == VALID_REQUEST) 
+    {
+      // seats = arg ...
+      int booked_seats = 0;
+      for (int i = 0; i < myreq.pref_seats_size; i++) {
+        if (isSeatFree(seats, myreq.pref_seat_list[i]) == SEAT_AVAILABLE) {
+          bookSeat(seats, myreq.pref_seat_list[i], myreq.pid);
+          booked_seats++;
+        }
+      }
+      if (booked_seats == myreq.num_wanted_seats)
+        printf("Reserved successfully all the seats");
+      else
+      {
+        //freeseats
+      }
+    }
+    else 
+    {
+      printf("Dropping invalid request. Grabbing another.\n");
+    }
 
     //handling
     printf("client pid = %d\n", myreq.pid);
