@@ -29,6 +29,7 @@ void bookSeat(Seat *seat, int seatNum, int clientId);
 void freeSeat(Seat *seat, int seatNum);
 
 int * init_booked_seats_list(int num_wanted_seats);
+void print_request_error(FILE *f, int client_id, int thread_id, int n_seats, char *seats_list, char *error_code);
 
 // Global variables
 int num_room_seats;
@@ -173,7 +174,7 @@ void *ticket_office_handler(void *arg)
 
     char substr[4];
     int str_length = 4 * myreq.pref_seats_size + myreq.pref_seats_size - 1;
-    char stringified_list[str_length];
+    char stringified_pref_seats_list[str_length];
     for (int i = 0; i < myreq.pref_seats_size; i++) {
       int n = myreq.pref_seat_list[i];
       if (n < 10)
@@ -184,7 +185,7 @@ void *ticket_office_handler(void *arg)
         sprintf(substr, " 0%d", myreq.pref_seat_list[i]);
       else
         sprintf(substr, " %d", myreq.pref_seat_list[i]);
-      strcat(stringified_list, substr);
+      strcat(stringified_pref_seats_list, substr);
     }
 
     int request_status = validate_request(myreq);
@@ -233,47 +234,39 @@ void *ticket_office_handler(void *arg)
     }
     case INVALID_PARAMETERS:
     {
-      fprintf(fslog, "%d-%d-%d: list of seats - %s\n", 
-                      (int) pthread_self(), 
-                      myreq.pid, 
-                      myreq.num_wanted_seats, 
-                      "ERR");
+      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_pref_seats_list, "ERR");
       break;
     }
     case OVERFLOW_NUM_WANTED_SEATS:
     {
-      fprintf(fslog, "%d-%d-%d: %s - %s\n", 
-                      (int)pthread_self(),
-                      myreq.pid, 
-                      myreq.num_wanted_seats, 
-                      stringified_list,
-                      "MAX");
+      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_pref_seats_list, "MAX");
       break;
     }
     case INVALID_NUMBER_PREF_SEATS:
     {
-      fprintf(fslog, "%d-%d-%d: %s - %s\n", 
-                      (int)pthread_self(), 
-                      myreq.pid, 
-                      myreq.num_wanted_seats, 
-                      stringified_list,
-                      "NST");
+      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_pref_seats_list, "NST");
       break;
     }
     case INVALID_SEAT_NUMBER:
     {
-      fprintf(fslog, "%d-%d-%d: %s - %s\n", 
-                      (int)pthread_self(), 
-                      myreq.pid, 
-                      myreq.num_wanted_seats,
-                      stringified_list,
-                      "IID");
+      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_pref_seats_list, "IID");
       break;
     }
     }
+    //close(fslog);
   }
 
   fprintf(fslog, "%d-CLOSED\n", (int)pthread_self()); // this code doesn't ever run
+}
+
+void print_request_error(FILE *f, int client_id, int thread_id, int n_seats, char *seats_list, char *error_code) {
+  printf("Error on request from client #%d\n\n", client_id);
+  fprintf(f, "%d-%d-%d: %s - %s\n", 
+                      thread_id, 
+                      client_id, 
+                      n_seats,
+                      seats_list,
+                      error_code);
 }
 
 // Frees seats of the array booked_seats_list 
