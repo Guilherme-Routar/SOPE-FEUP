@@ -117,7 +117,6 @@ void get_client_requests(int open_time)
       sem_wait(&empty);
       request = req;
       sem_post(&full);
-      printf("req = %d\n", req.pid);
     }
 
     usleep(100000); // 100 ms
@@ -220,7 +219,7 @@ void *ticket_office_handler(void *arg)
         stringified_booked_seats_list = stringify_list(booked_seats_list, booked_seats);
         // Writing to server log file the request information
         fprintf(fslog, "%d-%d-%d: %s - %s\n", 
-                      "thread_id", 
+                      (int)pthread_self(), 
                       myreq.pid, 
                       myreq.num_wanted_seats,
                       stringified_list,
@@ -229,7 +228,7 @@ void *ticket_office_handler(void *arg)
         for (int i = 0; i < booked_seats; i++)
           fprintf(fsbook, "%d\n", booked_seats_list[i]);
 
-        reply_to_client(myreq.pid, SUCCESS_RESERVATION);
+        reply_to_client(myreq.pid, SUCCESSFUL_RESERVATION);
 
         printf("Successful reservation\n\n");
       }
@@ -237,27 +236,32 @@ void *ticket_office_handler(void *arg)
         free_booked_seats(booked_seats_list, myreq.num_wanted_seats);
         print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "NAV");
         printf("Unable to make reservation\n\n");
+        reply_to_client(myreq.pid, UNSUCCESSFUL_RESERVATION);
       }
       break;
     }
     case INVALID_PARAMETERS:
     {
       print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "ERR");
+      reply_to_client(myreq.pid, UNSUCCESSFUL_RESERVATION);
       break;
     }
     case OVERFLOW_NUM_WANTED_SEATS:
     {
       print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "MAX");
+      reply_to_client(myreq.pid, UNSUCCESSFUL_RESERVATION);
       break;
     }
     case INVALID_NUMBER_PREF_SEATS:
     {
       print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "NST");
+      reply_to_client(myreq.pid, UNSUCCESSFUL_RESERVATION);
       break;
     }
     case INVALID_SEAT_NUMBER:
     {
       print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "IID");
+      reply_to_client(myreq.pid, UNSUCCESSFUL_RESERVATION);
       break;
     }
     }
@@ -282,7 +286,7 @@ void reply_to_client(int client_id, int status)
 
   char *success_msg = "Successful reservation";
   char *unsuccess_msg = "Unsuccessful reservation";
-  if (status == SUCCESS_RESERVATION)
+  if (status == SUCCESSFUL_RESERVATION)
     write(fdans, success_msg, sizeof(success_msg));
   else 
     write(fdans, unsuccess_msg, sizeof(unsuccess_msg));

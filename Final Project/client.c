@@ -148,8 +148,8 @@ void wait_answer(int timeout)
   while ((current_time - initial_time) < timeout)
   {
     int n;
-    char str[4];
-    n = read(fd_ans, str, 100);
+    char str[25];
+    n = read(fd_ans, str, 25);
     if (n > 0)
     {
       printf("message = %s", str);
