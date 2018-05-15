@@ -15,29 +15,33 @@
 
 void create_fifo_requests();
 void get_client_requests(int open_time);
-int validate_request(Request req);
-
-void *safe_malloc(void *ptr, int nbytes);
 Seat *init_seats_list();
 
+// General functions
+void *safe_malloc(void *ptr, int nbytes);
+char * stringify_list(int list[], int size);
+
+// Thread functions
 void launch_ticket_offices_threads(int num_ticket_offices);
 void *ticket_office_handler(void *arg);
-
 void free_booked_seats(int booked_seats_list[], int num_wanted_seats);
 int isSeatFree(Seat *seat, int seatNum);
 void bookSeat(Seat *seat, int seatNum, int clientId);
 void freeSeat(Seat *seat, int seatNum);
-
 int * init_booked_seats_list(int num_wanted_seats);
 void print_request_error(FILE *f, int client_id, int thread_id, int n_seats, char *seats_list, char *error_code);
-char * stringify_list(int list[], int size);
+int validate_request(Request req);
+void reply_to_client(int client_id, int status);
 
 // Global variables
-int num_room_seats;
-Request request;   // 1u buffer
+int num_room_seats; // Total number of room seats
+Request request;    // Buffer of 1 unit to hold incoming request
+Seat *seats;        // Array of seats (of type Seat)
+
+// Synchronization variables
 sem_t empty, full; // global semaphores
-Seat *seats;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 int main(int argc, char *argv[])
 {
@@ -163,8 +167,9 @@ void *ticket_office_handler(void *arg)
 {
   Request myreq;
 
-  FILE *fslog;
+  FILE *fslog, *fsbook;
   fslog = fopen(SLOG, "a");
+  fsbook = fopen(SBOOK, "a");
   fprintf(fslog, "%d-OPEN\n", (int)pthread_self());
 
   while (1)
@@ -213,17 +218,24 @@ void *ticket_office_handler(void *arg)
       if (booked_seats == myreq.num_wanted_seats) {
         char * stringified_booked_seats_list;
         stringified_booked_seats_list = stringify_list(booked_seats_list, booked_seats);
+        // Writing to server log file the request information
         fprintf(fslog, "%d-%d-%d: %s - %s\n", 
                       "thread_id", 
                       myreq.pid, 
                       myreq.num_wanted_seats,
                       stringified_list,
                       stringified_booked_seats_list);
+        // Writing to server booking the reserved seats
+        for (int i = 0; i < booked_seats; i++)
+          fprintf(fsbook, "%d\n", booked_seats_list[i]);
+
+        reply_to_client(myreq.pid, SUCCESS_RESERVATION);
+
         printf("Successful reservation\n\n");
       }
       else {
         free_booked_seats(booked_seats_list, myreq.num_wanted_seats);
-        fprintf(fslog, "%d-%d-%d: list of seats - %s\n", pthread_self(), myreq.pid, myreq.num_wanted_seats, "NAV");
+        print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "NAV");
         printf("Unable to make reservation\n\n");
       }
       break;
@@ -249,10 +261,33 @@ void *ticket_office_handler(void *arg)
       break;
     }
     }
-    //close(fslog);
   }
 
   fprintf(fslog, "%d-CLOSED\n", (int)pthread_self()); // this code doesn't ever run
+}
+
+void reply_to_client(int client_id, int status)
+{
+  int fdans;
+  char fifo_ans[MAX_FIFO_LENGTH];
+  sprintf(fifo_ans, "ans%ld", (long)client_id);
+  
+  do
+  {
+    fdans = open(fifo_ans, O_WRONLY | O_NONBLOCK);
+    if (fdans == -1)
+      usleep(100000); // 100 ms
+    
+  } while (fdans == -1);
+
+  char *success_msg = "Successful reservation";
+  char *unsuccess_msg = "Unsuccessful reservation";
+  if (status == SUCCESS_RESERVATION)
+    write(fdans, success_msg, sizeof(success_msg));
+  else 
+    write(fdans, unsuccess_msg, sizeof(unsuccess_msg));
+
+  close(fdans);
 }
 
 char *stringify_list(int list[], int size) 
@@ -285,6 +320,7 @@ void print_request_error(FILE *f, int client_id, int thread_id, int n_seats, cha
                       n_seats,
                       seats_list,
                       error_code);
+  //close(f);
 }
 
 // Frees seats of the array booked_seats_list 

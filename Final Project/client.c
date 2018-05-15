@@ -10,7 +10,6 @@
 #include "macros.h"
 #include "request.h"
 
-#define MAX_FIFO_LENGTH 8 // Fifo's name max length
 #define REQUEST_TIMEOUT 30 // Number of seconds to wait for fifo request to open
 
 void create_fifo_ans();
@@ -36,7 +35,7 @@ int main(int argc, char *argv[])
   /* Waiting for an answer from the server */
   char *end;
   int timeout = strtol(argv[1], &end, 10);
-  //wait_answer(timeout); 
+  wait_answer(timeout); 
 
   return 0;
 }

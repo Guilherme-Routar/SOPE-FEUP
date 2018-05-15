@@ -24,11 +24,18 @@
 #define FULL_ROOM -6
 #define AVAILABLE_SEATS 12
 
+/* RESERVATION MACROS */
+#define SUCCESS_RESERVATION 1
+#define UNSUCCESS_RESERVATION -1
+
 /* FILES */
 #define SLOG "slog.txt"
 #define CLOG "clog.txt"
 #define SBOOK "sbook.txt"
 #define CBOOK "cbook.txt"
+
+/* FIFO NAME */
+#define MAX_FIFO_LENGTH 8 // Fifo's name max length
 
 /* OTHER ERRORS */
 #define BAD_ALLOC NULL
