@@ -211,12 +211,14 @@ void *ticket_office_handler(void *arg)
         }
       }
       if (booked_seats == myreq.num_wanted_seats) {
+        char * stringified_booked_seats_list;
+        stringified_booked_seats_list = stringify_list(booked_seats_list, booked_seats);
         fprintf(fslog, "%d-%d-%d: %s - %s\n", 
                       "thread_id", 
-                      "client_id", 
-                      "n_seats",
-                      "seats_list",
-                      "booked_seats_list");
+                      myreq.pid, 
+                      myreq.num_wanted_seats,
+                      stringified_list,
+                      stringified_booked_seats_list);
         printf("Successful reservation\n\n");
       }
       else {
