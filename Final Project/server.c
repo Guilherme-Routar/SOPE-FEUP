@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
 
   sem_destroy(&empty);
   sem_destroy(&full);
+  pthread_mutex_destroy(&mutex);
 }
 
 void create_fifo_requests()
@@ -170,6 +171,22 @@ void *ticket_office_handler(void *arg)
     myreq = request;
     sem_post(&empty);
 
+    char substr[4];
+    int str_length = 4 * myreq.pref_seats_size + myreq.pref_seats_size - 1;
+    char stringified_list[str_length];
+    for (int i = 0; i < myreq.pref_seats_size; i++) {
+      int n = myreq.pref_seat_list[i];
+      if (n < 10)
+        sprintf(substr, " 000%d", myreq.pref_seat_list[i]);
+      else if (n < 100)
+        sprintf(substr, " 00%d", myreq.pref_seat_list[i]);
+      else if (n < 1000)
+        sprintf(substr, " 0%d", myreq.pref_seat_list[i]);
+      else
+        sprintf(substr, " %d", myreq.pref_seat_list[i]);
+      strcat(stringified_list, substr);
+    }
+
     int request_status = validate_request(myreq);
     switch (request_status)
     {
@@ -180,64 +197,102 @@ void *ticket_office_handler(void *arg)
         exit(0);
 
       // Keeping track of booked seats
+      int booked_seats = 0;
       int booked_seats_list[myreq.num_wanted_seats];
+      // Initializing the booked_seats_list (to -1)
       for (int i = 0; i < myreq.num_wanted_seats; i++) {
         booked_seats_list[i] = -1;
       }
-      for (int i = 0; i < myreq.num_wanted_seats; i++) {
-        printf("book seats before init #%d\n", booked_seats_list[i]);
-      }
-
-      int booked_seats = 0;
+      
       // Trying to book seats
       for (int i = 0; i < myreq.pref_seats_size; i++) {
         for (int j = 0; j < num_room_seats; j++) {
           if (myreq.pref_seat_list[i] == seats[j].number) {
-            pthread_mutex_lock(&mutex);
             if (isSeatFree(&seats[j], myreq.pref_seat_list[i]) &&
                 booked_seats < myreq.num_wanted_seats) {
+              // Locking while booking seats
+              pthread_mutex_lock(&mutex);
               bookSeat(&seats[j], myreq.pref_seat_list[i], myreq.pid);
               booked_seats_list[booked_seats] = seats[j].number;
               booked_seats++;
+              pthread_mutex_unlock(&mutex);
+              // Unlocking after booking seats
             }
-            pthread_mutex_unlock(&mutex);
           }
         }
       }
       if (booked_seats == myreq.num_wanted_seats)
         printf("Successful reservation\n\n");
       else {
-        printf("Freeing seats because %d =/= %d\n", booked_seats, myreq.num_wanted_seats);
+        //printf("Freeing seats because %d =/= %d\n", booked_seats, myreq.num_wanted_seats);
         free_booked_seats(booked_seats_list, myreq.num_wanted_seats);
+        fprintf(fslog, "%d-%d-%d: list of seats - %s\n", pthread_self(), myreq.pid, myreq.num_wanted_seats, "NAV");
+        printf("Unable to make reservation\n\n");
       }
-
+      break;
+    }
+    case INVALID_PARAMETERS:
+    {
+      fprintf(fslog, "%d-%d-%d: list of seats - %s\n", 
+                      (int) pthread_self(), 
+                      myreq.pid, 
+                      myreq.num_wanted_seats, 
+                      "ERR");
+      break;
+    }
+    case OVERFLOW_NUM_WANTED_SEATS:
+    {
+      fprintf(fslog, "%d-%d-%d: %s - %s\n", 
+                      (int)pthread_self(),
+                      myreq.pid, 
+                      myreq.num_wanted_seats, 
+                      stringified_list,
+                      "MAX");
+      break;
+    }
+    case INVALID_NUMBER_PREF_SEATS:
+    {
+      fprintf(fslog, "%d-%d-%d: %s - %s\n", 
+                      (int)pthread_self(), 
+                      myreq.pid, 
+                      myreq.num_wanted_seats, 
+                      stringified_list,
+                      "NST");
+      break;
+    }
+    case INVALID_SEAT_NUMBER:
+    {
+      fprintf(fslog, "%d-%d-%d: %s - %s\n", 
+                      (int)pthread_self(), 
+                      myreq.pid, 
+                      myreq.num_wanted_seats,
+                      stringified_list,
+                      "IID");
       break;
     }
     }
   }
 
-  fprintf(fslog, "%d-CLOSED\n", (int)pthread_self());
+  fprintf(fslog, "%d-CLOSED\n", (int)pthread_self()); // this code doesn't ever run
 }
 
-void free_booked_seats(int booked_seats_list[], int num_wanted_seats) {
-
-/*
-  for (int i = 0; i < num_wanted_seats; i++) {
-    printf("Readying to free seat #%d\n", booked_seats_list[i]);
-  }
-*/
-
+// Frees seats of the array booked_seats_list 
+void free_booked_seats(int booked_seats_list[], int num_wanted_seats) 
+{
   for (int i = 0; i < num_room_seats; i++) {
     for (int j = 0; j < num_wanted_seats; j++) {
-      pthread_mutex_lock(&mutex);
       if (seats[i].number == booked_seats_list[j]) {
+        // Locking while seats are being freed
+        pthread_mutex_lock(&mutex);
         freeSeat(&seats[i], booked_seats_list[j]);
+        pthread_mutex_unlock(&mutex);
+        // Unlocking after seats are freed
       }
-      pthread_mutex_unlock(&mutex);
     }
   }
 }
 
+// Check if the room is not full
 int check_room_availability()
 {
   int unavailable_seats = 0;
@@ -251,6 +306,7 @@ int check_room_availability()
   return AVAILABLE_SEATS;
 }
 
+// Initializes the global array seats
 Seat *init_seats_list()
 {
   int nbytes = num_room_seats * sizeof(Seat);
@@ -268,7 +324,7 @@ Seat *init_seats_list()
   return seats;
 }
 
-// Testing if seat seatNum is free
+// Testing if seat referenced by position seat is free
 int isSeatFree(Seat *seat, int seatNum)
 {
   if ((*seat).available == SEAT_AVAILABLE)
@@ -277,7 +333,7 @@ int isSeatFree(Seat *seat, int seatNum)
     return SEAT_UNAVAILABLE;
 }
 
-// Booking seat seatnum for client clientId
+// Booking seat referenced by position seat
 void bookSeat(Seat *seat, int seatNum, int clientId)
 {
   printf("Booking seat #%d\n", (*seat).number);
@@ -285,7 +341,7 @@ void bookSeat(Seat *seat, int seatNum, int clientId)
   (*seat).client_id = clientId;
 }
 
-// Freeing seat seatNum (in case the final reservation couldn't be done)
+// Freeing seat referenced by position seat (in case final reservation can't be done)
 void freeSeat(Seat *seat, int seatNum)
 {
   printf("Freeing seat #%d, requested %d\n", (*seat).number, seatNum);
