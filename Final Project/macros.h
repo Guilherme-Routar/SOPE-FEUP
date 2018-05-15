@@ -33,4 +33,6 @@
 /* OTHER ERRORS */
 #define BAD_ALLOC NULL
 
+#define DELAY(x) sleep(x)
+
 #endif 

@@ -30,6 +30,7 @@ void freeSeat(Seat *seat, int seatNum);
 
 int * init_booked_seats_list(int num_wanted_seats);
 void print_request_error(FILE *f, int client_id, int thread_id, int n_seats, char *seats_list, char *error_code);
+char * stringify_list(int list[], int size);
 
 // Global variables
 int num_room_seats;
@@ -172,21 +173,8 @@ void *ticket_office_handler(void *arg)
     myreq = request;
     sem_post(&empty);
 
-    char substr[4];
-    int str_length = 4 * myreq.pref_seats_size + myreq.pref_seats_size - 1;
-    char stringified_pref_seats_list[str_length];
-    for (int i = 0; i < myreq.pref_seats_size; i++) {
-      int n = myreq.pref_seat_list[i];
-      if (n < 10)
-        sprintf(substr, " 000%d", myreq.pref_seat_list[i]);
-      else if (n < 100)
-        sprintf(substr, " 00%d", myreq.pref_seat_list[i]);
-      else if (n < 1000)
-        sprintf(substr, " 0%d", myreq.pref_seat_list[i]);
-      else
-        sprintf(substr, " %d", myreq.pref_seat_list[i]);
-      strcat(stringified_pref_seats_list, substr);
-    }
+    char * stringified_list;
+    stringified_list = stringify_list(myreq.pref_seat_list, myreq.pref_seats_size);
 
     int request_status = validate_request(myreq);
     switch (request_status)
@@ -222,10 +210,16 @@ void *ticket_office_handler(void *arg)
           }
         }
       }
-      if (booked_seats == myreq.num_wanted_seats)
+      if (booked_seats == myreq.num_wanted_seats) {
+        fprintf(fslog, "%d-%d-%d: %s - %s\n", 
+                      "thread_id", 
+                      "client_id", 
+                      "n_seats",
+                      "seats_list",
+                      "booked_seats_list");
         printf("Successful reservation\n\n");
+      }
       else {
-        //printf("Freeing seats because %d =/= %d\n", booked_seats, myreq.num_wanted_seats);
         free_booked_seats(booked_seats_list, myreq.num_wanted_seats);
         fprintf(fslog, "%d-%d-%d: list of seats - %s\n", pthread_self(), myreq.pid, myreq.num_wanted_seats, "NAV");
         printf("Unable to make reservation\n\n");
@@ -234,22 +228,22 @@ void *ticket_office_handler(void *arg)
     }
     case INVALID_PARAMETERS:
     {
-      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_pref_seats_list, "ERR");
+      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "ERR");
       break;
     }
     case OVERFLOW_NUM_WANTED_SEATS:
     {
-      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_pref_seats_list, "MAX");
+      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "MAX");
       break;
     }
     case INVALID_NUMBER_PREF_SEATS:
     {
-      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_pref_seats_list, "NST");
+      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "NST");
       break;
     }
     case INVALID_SEAT_NUMBER:
     {
-      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_pref_seats_list, "IID");
+      print_request_error(fslog, myreq.pid, (int)pthread_self(), myreq.num_wanted_seats, stringified_list, "IID");
       break;
     }
     }
@@ -257,6 +251,28 @@ void *ticket_office_handler(void *arg)
   }
 
   fprintf(fslog, "%d-CLOSED\n", (int)pthread_self()); // this code doesn't ever run
+}
+
+char *stringify_list(int list[], int size) 
+{
+  char *stringified_list;
+  int nbytes = sizeof(char) * (4 * size + size - 1);
+  stringified_list = safe_malloc(list, nbytes);
+  
+  char substr[4];
+  for (int i = 0; i < size; i++) {
+    int n = list[i];
+    if (n < 10)
+      sprintf(substr, " 000%d", list[i]);
+    else if (n < 100)
+      sprintf(substr, " 00%d", list[i]);
+    else if (n < 1000)
+      sprintf(substr, " 0%d", list[i]);
+    else
+      sprintf(substr, " %d", list[i]);
+    strcat(stringified_list, substr);
+    }
+  return stringified_list;
 }
 
 void print_request_error(FILE *f, int client_id, int thread_id, int n_seats, char *seats_list, char *error_code) {
