@@ -10,4 +10,12 @@ typedef struct Requests {
   int pref_seat_list[MAX_CLI_SEATS];
 } Request;
 
+typedef struct RequestReply {
+  int status;
+  int booked_seats_size;
+  int client_wanted_seats;
+  char error_code[3];
+  int booked_seats[MAX_CLI_SEATS];
+} Req_Reply;
+
 #endif 
