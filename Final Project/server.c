@@ -259,8 +259,10 @@ void *ticket_office_handler(void *arg)
                       stringified_booked_seats_list);
         fflush(fslog);
         // Writing to server booking the reserved seats
-        for (int i = 0; i < booked_seats; i++)
+        for (int i = 0; i < booked_seats; i++) {
           fprintf(fsbook, "%d\n", booked_seats_list[i]);
+          fflush(fsbook);
+        }
         // Initializing reply
         RequestReply reply;
         reply.status = SUCCESSFUL_RESERVATION;
@@ -349,7 +351,6 @@ void *ticket_office_handler(void *arg)
     }
     }
   }
-  printf("\nDo we ever get here?\n");
   pthread_exit(0);
 }
 
