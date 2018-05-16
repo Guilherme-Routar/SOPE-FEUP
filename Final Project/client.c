@@ -16,7 +16,8 @@ void create_fifo_ans();
 Request init_request(char *arglist[]);
 void send_request(Request req);
 void wait_answer(int timeout);
-void write_to_clog(Req_Reply reply);
+void write_to_clog(RequestReply reply);
+void *safe_malloc(void *ptr, int nbytes);
 
 int num_wanted_seats;
 
@@ -152,10 +153,10 @@ void wait_answer(int timeout)
   time_t current_time = initial_time;
   while ((current_time - initial_time) < timeout)
   {
-    Req_Reply reply;
+    RequestReply reply;
     int n;
     char str[25];
-    n = read(fd_ans, &reply, 25);
+    n = read(fd_ans, &reply, sizeof(reply));
     if (n > 0)
     {
       write_to_clog(reply);
@@ -169,20 +170,29 @@ void wait_answer(int timeout)
   unlink(fifo_ans);
 }
 
-void write_to_clog(Req_Reply reply)
+/* Allocates nbytes bytes of memory for the assigned pointer */
+void *safe_malloc(void *ptr, int nbytes)
+{
+  ptr = malloc(nbytes);
+  if (!ptr)
+  {
+    fprintf(stderr, "Failed to allocate %d bytes of memory\n", nbytes);
+    return BAD_ALLOC;
+  }
+  return ptr;
+}
+
+void write_to_clog(RequestReply reply)
 {
   FILE *clog, *cbook;
   clog = fopen(CLOG, "a");
   cbook = fopen(CBOOK, "a");
 
-  printf("wanted seats = %d\n", reply.client_wanted_seats);
-  printf("booked seats size = %d\n", reply.booked_seats_size);
-  printf("status = %d\n", reply.status);
-  printf("seat = %d\n", reply.booked_seats[10]);
-
   char str[2];
   if (reply.status == SUCCESSFUL_RESERVATION)
   {
+    printf("Booked seats # ");
+
     char wanted_seats[2];
     if (reply.client_wanted_seats < 10)
       sprintf(wanted_seats, "0%d", reply.client_wanted_seats);
@@ -207,10 +217,16 @@ void write_to_clog(Req_Reply reply)
       else
         sprintf(seat, "%d", reply.booked_seats[i]);
 
+      printf("%d ", reply.booked_seats[i]); // Printing booked seats on the client side
       fprintf(clog, "%d %s.%s %s\n", getpid(), index, wanted_seats, seat);
+      fflush(clog);
       fprintf(cbook, "%d\n", reply.booked_seats[i]);
+      fflush(cbook);
     }
   }
-  else if (reply.status = UNSUCCESSFUL_RESERVATION)
+  else if (reply.status = UNSUCCESSFUL_RESERVATION) {
+    printf("Unsuccessful reservation: ERROR = %s", reply.error_code);
     fprintf(clog, "%d %s\n", getpid(), reply.error_code);
+    fflush(clog);
+  } 
 }

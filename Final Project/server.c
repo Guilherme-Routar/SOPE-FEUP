@@ -32,7 +32,7 @@ void freeSeat(Seat *seat, int seatNum);
 int * init_booked_seats_list(int num_wanted_seats);
 void print_request_error(FILE *f, int client_id, int thread_id, int n_seats, char *seats_list, char *error_code);
 int validate_request(Request req);
-void reply_to_client(int client_id, Req_Reply reply);
+void reply_to_client(int client_id, RequestReply reply);
 void terminate_threads();
 
 // Global variables
@@ -189,7 +189,6 @@ void *ticket_office_handler(void *arg)
 {
   Request myreq;
   int thread_n = * (int *) arg;
-  printf("Inside thread #");
 
   FILE *fslog, *fsbook;
   fslog = fopen(SLOG, "a");
@@ -263,22 +262,21 @@ void *ticket_office_handler(void *arg)
         for (int i = 0; i < booked_seats; i++)
           fprintf(fsbook, "%d\n", booked_seats_list[i]);
         // Initializing reply
-        Req_Reply reply;
+        RequestReply reply;
         reply.status = SUCCESSFUL_RESERVATION;
         reply.booked_seats_size = booked_seats;
         reply.client_wanted_seats = myreq.num_wanted_seats;
-        reply.error_code[0] = 'N';
-        reply.error_code[1] = 'U';
-        reply.error_code[2] = 'L';
+        // Initializing array to -1
         for (int i = 0; i < MAX_CLI_SEATS; i++) {
           reply.booked_seats[i] = -1;
         }
+        // Assigning booked seats
         for (int i = 0; i < booked_seats; i++) {
           reply.booked_seats[i] = booked_seats_list[i];
         }
         // Replying to client
+        printf("Successful reservation for client %d. Seats # %s\n", myreq.pid, stringified_booked_seats_list);
         reply_to_client(myreq.pid, reply);
-        printf("Successful reservation\n\n");
       }
       // UNSUCCESSFUL RESERVATION
       else {
@@ -287,14 +285,13 @@ void *ticket_office_handler(void *arg)
         // Printing to server log the request status
         print_request_error(fslog, myreq.pid, thread_n, myreq.num_wanted_seats, stringified_list, "NAV");
         // Initializing reply
-        Req_Reply reply;
+        RequestReply reply;
         reply.status = UNSUCCESSFUL_RESERVATION;
         reply.error_code[0] = 'N';
         reply.error_code[1] = 'A';
         reply.error_code[2] = 'V';
         // Replying to client
         reply_to_client(myreq.pid, reply);
-        printf("Reservation error\n\n");
       }
       break;
     }
@@ -302,56 +299,52 @@ void *ticket_office_handler(void *arg)
     {
       print_request_error(fslog, myreq.pid, thread_n, myreq.num_wanted_seats, stringified_list, "ERR");
       // Initializing reply
-      Req_Reply reply;
+      RequestReply reply;
       reply.status = UNSUCCESSFUL_RESERVATION;
       reply.error_code[0] = 'E';
       reply.error_code[1] = 'R';
       reply.error_code[2] = 'R';
       // Replying to client
       reply_to_client(myreq.pid, reply);
-      printf("Reservation error\n\n");
       break;
     }
     case OVERFLOW_NUM_WANTED_SEATS:
     {
       print_request_error(fslog, myreq.pid, thread_n, myreq.num_wanted_seats, stringified_list, "MAX");
       // Initializing reply
-      Req_Reply reply;
+      RequestReply reply;
       reply.status = UNSUCCESSFUL_RESERVATION;
       reply.error_code[0] = 'M';
       reply.error_code[1] = 'A';
       reply.error_code[2] = 'X';
       // Replying to client
       reply_to_client(myreq.pid, reply);
-      printf("Reservation error\n\n");
       break;
     }
     case INVALID_NUMBER_PREF_SEATS:
     {
       print_request_error(fslog, myreq.pid, thread_n, myreq.num_wanted_seats, stringified_list, "NST");
       // Initializing reply
-      Req_Reply reply;
+      RequestReply reply;
       reply.status = UNSUCCESSFUL_RESERVATION;
       reply.error_code[0] = 'N';
       reply.error_code[1] = 'S';
       reply.error_code[2] = 'I';
       // Replying to client
       reply_to_client(myreq.pid, reply);
-      printf("Reservation error\n\n");
       break;
     }
     case INVALID_SEAT_NUMBER:
     {
       print_request_error(fslog, myreq.pid, thread_n, myreq.num_wanted_seats, stringified_list, "IID");
       // Initializing reply
-      Req_Reply reply;
+      RequestReply reply;
       reply.status = UNSUCCESSFUL_RESERVATION;
       reply.error_code[0] = 'I';
       reply.error_code[1] = 'I';
       reply.error_code[2] = 'D';
       // Replying to client
       reply_to_client(myreq.pid, reply);
-      printf("Reservation error\n\n");
       break;
     }
     }
@@ -361,7 +354,7 @@ void *ticket_office_handler(void *arg)
 }
 
 // Sends RequestReply struct to FIFO
-void reply_to_client(int client_id, Req_Reply reply)
+void reply_to_client(int client_id, RequestReply reply)
 {
   int fdans;
   char fifo_ans[MAX_FIFO_LENGTH];
@@ -374,11 +367,10 @@ void reply_to_client(int client_id, Req_Reply reply)
       usleep(100000); // 100 ms
     
   } while (fdans == -1);
-  
-  printf("size of reply = %d; size of buf = %d", sizeof(reply), PIPE_BUF);
+
   write(fdans, &reply, sizeof(reply));
 
-  close(fdans);
+  //close(fdans);
 }
 
 // Transforms an array of ints into a string 
@@ -405,7 +397,7 @@ char *stringify_list(int list[], int size)
 }
 
 void print_request_error(FILE *f, int client_id, int thread_id, int n_seats, char *seats_list, char *error_code) {
-  printf("Error on request from client #%d\n\n", client_id);
+  printf("Error processing request from client #%d\n", client_id);
   fprintf(f, "%d-%d-%d: %s - %s\n", 
                       thread_id, 
                       client_id, 
@@ -475,7 +467,6 @@ int isSeatFree(Seat *seat, int seatNum)
 // Booking seat referenced by position seat
 void bookSeat(Seat *seat, int seatNum, int clientId)
 {
-  printf("Booking seat #%d\n", (*seat).number);
   (*seat).available = SEAT_UNAVAILABLE;
   (*seat).client_id = clientId;
 }
@@ -483,7 +474,6 @@ void bookSeat(Seat *seat, int seatNum, int clientId)
 // Freeing seat referenced by position seat (in case final reservation can't be done)
 void freeSeat(Seat *seat, int seatNum)
 {
-  printf("Freeing seat #%d, requested %d\n", (*seat).number, seatNum);
   (*seat).available = SEAT_AVAILABLE;
   (*seat).client_id = -1;
 }
