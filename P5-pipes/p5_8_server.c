@@ -27,6 +27,8 @@ int main(int argc, char *argv[])
         sleep(1);
     }
     printf("Time elapsed");
+
+    unlink("/tmp/fifo_chg");
     
     return 0;
 }
