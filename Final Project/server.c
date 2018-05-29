@@ -139,8 +139,6 @@ void get_client_requests(int open_time)
   printf("Ticket offices closed.\n");
   unlink("requests");  
   terminate_threads();
-  //free(seats);
-  //free(thread_ids);
 }
 
 int validate_request(Request req)
@@ -178,6 +176,9 @@ void launch_ticket_offices_threads()
   pthread_t threads[num_ticket_offices];
   for (int i = 0; i < num_ticket_offices; i++)
   {
+    /**
+     * ALTERACAO: Adicionados IDs readable (1,2,3,..) para escrita nos ficheiros (em vez dos TIDs)
+    **/
     thread_ids[i] = threads[i];
     thread_n[i] = i + 1;
     pthread_create(&threads[i], NULL, ticket_office_handler, &thread_n[i]);
@@ -194,6 +195,10 @@ void *ticket_office_handler(void *arg)
   fslog = fopen(SLOG, "a");
   fsbook = fopen(SBOOK, "a");
   fprintf(fslog, "%d-OPEN\n", thread_n);
+  /**
+   * ALTERACAO: Adicionados fflush de forma a sincronizar a escrita nos ficheiros
+   *            de acordo com a ordem das operacoes efetuadas
+  **/
   fflush(fslog);
 
   while (closed == 0)
@@ -257,6 +262,10 @@ void *ticket_office_handler(void *arg)
                       myreq.num_wanted_seats,
                       stringified_list,
                       stringified_booked_seats_list);
+        /**
+        * ALTERACAO: Adicionados fflush de forma a sincronizar a escrita nos ficheiros
+        *            de acordo com a ordem das operacoes efetuadas
+        **/
         fflush(fslog);
         // Writing to server booking the reserved seats
         for (int i = 0; i < booked_seats; i++)
@@ -404,6 +413,10 @@ void print_request_error(FILE *f, int client_id, int thread_id, int n_seats, cha
                       n_seats,
                       seats_list,
                       error_code);
+  /**
+  * ALTERACAO: Adicionados fflush de forma a sincronizar a escrita nos ficheiros
+  *            de acordo com a ordem das operacoes efetuadas
+  **/                    
   fflush(f);
 }
 
@@ -479,12 +492,23 @@ void freeSeat(Seat *seat, int seatNum)
 }
 
 // Terminates running threads and writes their ending to file
+/**
+ * ALTERACAO: Adicionada string de terminacao das threads/bilheteiras
+**/
 void terminate_threads() {
   FILE *fslog;
   fslog = fopen(SLOG, "a");
   for (int i = 0; i < num_ticket_offices; i++) {
     fprintf(fslog, "%d-CLOSE\n", i + 1);
+    /**
+    * ALTERACAO: Adicionados fflush de forma a sincronizar a escrita nos ficheiros
+    *            de acordo com a ordem das operacoes efetuadas
+    **/
     fflush(fslog);
+    /**
+    * ALTERACAO: Removida espera pelas threads pois causava SEGFAULTs 
+    *            por motivos desconhecidos
+    **/
     //pthread_join(thread_ids[i], NULL);
   }
 }

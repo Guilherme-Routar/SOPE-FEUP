@@ -156,6 +156,11 @@ void wait_answer(int timeout)
     RequestReply reply;
     int n;
     char str[25];
+    /**
+    * ALTERACAO: Aumento do número de bytes da resposta: sizeof(reply) 
+    * (o tamanho anterior era demasiado pequeno, causando acesso a posições
+    * de memória com valores diferentes/aleatórios)
+    **/
     n = read(fd_ans, &reply, sizeof(reply));
     if (n > 0)
     {
@@ -219,14 +224,26 @@ void write_to_clog(RequestReply reply)
 
       printf("%d ", reply.booked_seats[i]); // Printing booked seats on the client side
       fprintf(clog, "%d %s.%s %s\n", getpid(), index, wanted_seats, seat);
+      /**
+      * ALTERACAO: Adicionados fflush de forma a sincronizar a escrita nos ficheiros
+      *            de acordo com a ordem das operacoes efetuadas
+      **/
       fflush(clog);
       fprintf(cbook, "%d\n", reply.booked_seats[i]);
+      /**
+      * ALTERACAO: Adicionados fflush de forma a sincronizar a escrita nos ficheiros
+      *            de acordo com a ordem das operacoes efetuadas
+      **/
       fflush(cbook);
     }
   }
   else if (reply.status = UNSUCCESSFUL_RESERVATION) {
     printf("Unsuccessful reservation: ERROR = %s", reply.error_code);
     fprintf(clog, "%d %s\n", getpid(), reply.error_code);
+    /**
+    * ALTERACAO: Adicionados fflush de forma a sincronizar a escrita nos ficheiros
+    *            de acordo com a ordem das operacoes efetuadas
+    **/
     fflush(clog);
   } 
 }
