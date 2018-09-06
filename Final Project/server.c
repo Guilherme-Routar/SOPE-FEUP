@@ -176,9 +176,6 @@ void launch_ticket_offices_threads()
   pthread_t threads[num_ticket_offices];
   for (int i = 0; i < num_ticket_offices; i++)
   {
-    /**
-     * ALTERACAO: Adicionados IDs readable (1,2,3,..) para escrita nos ficheiros (em vez dos TIDs)
-    **/
     thread_ids[i] = threads[i];
     thread_n[i] = i + 1;
     pthread_create(&threads[i], NULL, ticket_office_handler, &thread_n[i]);
